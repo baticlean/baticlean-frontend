@@ -1,0 +1,22 @@
+/* src/components/CircularLoading.css */
+.loading-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white; /* Couleur du texte */
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3); /* Couleur de fond du cercle */
+  border-top-color: #ffffff; /* Couleur de la partie qui tourne */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
