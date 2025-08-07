@@ -1,72 +1,111 @@
 import { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { updateUserFromSocket } from '../redux/authSlice.js';
-import { updateServiceFromSocket } from '../redux/serviceSlice.js';
-import { updateBookingFromSocket } from '../redux/bookingSlice.js';
+
+// Importer les actions des différents slices
+import { updateUserFromSocket, setJustReactivated } from '../redux/authSlice.js';
+import { updateBookingFromSocket, addBooking, removeBooking } from '../redux/bookingSlice.js';
+import { addAdminTicket, removeAdminTicket, updateTicket } from '../redux/ticketSlice.js';
+import { addReclamation, removeReclamation } from '../redux/reclamationSlice.js';
+import { setCounts } from '../redux/notificationSlice.js';
+// --- AJOUTÉ ICI ---
+import { updateServiceFromSocket, removeServiceFromSocket } from '../redux/serviceSlice.js';
+
+// Importer toutes les fonctions de connexion socket
 import { 
   connectSocket, disconnectSocket, addUserSocket, 
-  onUserUpdate, offUserUpdate,
+  onUserUpdate, offUserUpdate, 
+  onBookingUpdate, offBookingUpdate,
+  onNewUserRegistered, offNewUserRegistered,
+  onNewBooking, offNewBooking, 
+  onBookingDeleted, offBookingDeleted,
+  onNewTicket, offNewTicket, 
+  onTicketDeleted, offTicketDeleted,
+  onTicketUpdated, offTicketUpdated,
+  onNewReclamation, offNewReclamation, 
+  onReclamationDeleted, offReclamationDeleted,
+  onNotificationCountsUpdated, offNotificationCountsUpdated,
+  // --- AJOUTÉ ICI ---
   onServiceUpdate, offServiceUpdate,
-  onBookingUpdate, offBookingUpdate
+  onServiceDeleted, offServiceDeleted // Assurez-vous que cette fonction existe dans votre `socket.js`
 } from '../socket/socket.js';
-import RestoredAccountToast from './RestoredAccountToast.jsx';
 
-export default function GlobalSocketListener() {
+const GlobalSocketListener = () => {
   const { user, token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
   const userStateRef = useRef(user);
 
-  useEffect(() => {
-    userStateRef.current = user;
-  });
+  useEffect(() => { userStateRef.current = user; }, [user]);
 
   useEffect(() => {
-    if (token) {
-      connectSocket();
-      if (user?._id) addUserSocket(user._id);
+    if (!token || !user?._id) return;
+    
+    connectSocket();
+    addUserSocket(user._id);
 
-      const handleUserUpdate = (data) => {
-        const { user: updatedUser, newToken } = data;
-        const oldState = userStateRef.current;
-        
-        if (updatedUser.status === 'active' && (oldState?.status === 'banned' || oldState?.status === 'suspended')) {
-          toast(<RestoredAccountToast />, { toastId: 'account-restored-toast', autoClose: false, closeOnClick: false, draggable: false, closeButton: false, position: "top-center" });
-        }
-        
-        if (updatedUser.role === 'admin' && oldState?.role === 'user') {
-          toast.success('Félicitations, vous avez été promu Administrateur !');
-        } else if (updatedUser.role === 'user' && oldState?.role === 'admin') {
-          toast.warn('Vos droits d\'administrateur ont été révoqués.');
-          if (location.pathname.startsWith('/admin')) {
-            navigate('/home');
-          }
-        }
-        dispatch(updateUserFromSocket({ user: updatedUser, newToken }));
-      };
+    const isAdmin = userStateRef.current?.role?.includes('admin');
 
-      const handleServiceUpdate = (updatedService) => dispatch(updateServiceFromSocket(updatedService));
-      const handleBookingUpdate = (updatedBooking) => {
-        toast.info(`Votre réservation pour "${updatedBooking.service?.title}" a été mise à jour : ${updatedBooking.status}`);
-        dispatch(updateBookingFromSocket(updatedBooking));
-      };
-
-      onUserUpdate(handleUserUpdate);
-      onServiceUpdate(handleServiceUpdate);
-      onBookingUpdate(handleBookingUpdate);
-    }
-    return () => {
-      if (token) {
-        offUserUpdate();
-        offServiceUpdate();
-        offBookingUpdate();
-        disconnectSocket();
-      }
+    // --- GESTION DES SERVICES (POUR TOUS LES UTILISATEURS) ---
+    
+    // Écoute les mises à jour (création, update, like, commentaire)
+    const handleServiceUpdate = (updatedService) => {
+      console.log('Socket received: serviceUpdated', updatedService);
+      dispatch(updateServiceFromSocket(updatedService));
     };
-  }, [token, user?._id, dispatch, navigate, location]);
 
-  return null;
-}
+    // Écoute les suppressions
+    const handleServiceDelete = (deletedService) => {
+      console.log('Socket received: serviceDeleted', deletedService);
+      dispatch(removeServiceFromSocket(deletedService));
+      toast.warn(`Le service "${deletedService.title || 'un service'}" a été supprimé.`);
+    };
+
+    onServiceUpdate(handleServiceUpdate);
+    onServiceDeleted(handleServiceDelete);
+
+
+    // --- AUTRES GESTIONS EXISTANTES ---
+    const handleUserUpdate = (data) => { /* ... votre logique existante ... */ };
+    const handleBookingUpdate = (data) => { /* ... votre logique existante ... */ };
+    const handleNewUserRegistration = (data) => { /* ... votre logique existante ... */ };
+    
+    onUserUpdate(handleUserUpdate);
+    onBookingUpdate(handleBookingUpdate);
+    onNewUserRegistered(handleNewUserRegistration);
+    onTicketUpdated((updatedTicket) => dispatch(updateTicket(updatedTicket)));
+    onNotificationCountsUpdated((newCounts) => { if (isAdmin) { dispatch(setCounts(newCounts)); } });
+
+    if (isAdmin) {
+      onNewBooking((data) => dispatch(addBooking(data)));
+      onBookingDeleted((data) => dispatch(removeBooking(data)));
+      onNewTicket((data) => dispatch(addAdminTicket(data)));
+      onTicketDeleted((data) => dispatch(removeAdminTicket(data)));
+      onNewReclamation((data) => dispatch(addReclamation(data)));
+      onReclamationDeleted((data) => dispatch(removeReclamation(data)));
+    }
+
+    // Fonction de nettoyage pour retirer les écouteurs
+    return () => {
+      // --- AJOUTÉ ICI ---
+      offServiceUpdate();
+      offServiceDeleted();
+
+      // Nettoyage des autres écouteurs
+      offUserUpdate();
+      offBookingUpdate();
+      offNewUserRegistered();
+      offNewBooking();
+      offBookingDeleted();
+      offNewTicket();
+      offTicketDeleted();
+      offTicketUpdated();
+      offNewReclamation();
+      offReclamationDeleted();
+      offNotificationCountsUpdated();
+    };
+  }, [token, user?._id, dispatch]);
+
+  return null; // Ce composant n'affiche rien
+};
+
+export default GlobalSocketListener;

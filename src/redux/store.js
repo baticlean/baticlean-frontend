@@ -6,14 +6,16 @@ import adminReducer from './adminSlice.js';
 import bookingReducer from './bookingSlice.js';
 import ticketReducer from './ticketSlice.js';
 import reclamationReducer from './reclamationSlice.js';
+import notificationReducer from './notificationSlice.js';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     services: serviceReducer,
+    bookings: bookingReducer, // AJOUTER
+    tickets: ticketReducer, // AJOUTER
+    reclamations: reclamationReducer, // AJOUTER
+    notifications: notificationReducer,
     admin: adminReducer,
-    bookings: bookingReducer,
-    tickets: ticketReducer,
-    reclamations: reclamationReducer,
   },
 });

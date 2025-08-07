@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, TextField, IconButton, Paper, Typography, List, ListItem, ListItemText, Button } from '@mui/material';
+import { Box, TextField, IconButton, Paper, Typography, List, ListItem, Button } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { useSelector, useDispatch } from 'react-redux';
 import { createTicket } from '../redux/ticketSlice.js';
 import { toast } from 'react-toastify';
+import TicketCreatedNotice from '../components/TicketCreatedNotice.jsx'; // Importer
 
-// La logique du bot est maintenant un peu plus avancée
 const getBotResponse = (message) => {
   const msg = message.toLowerCase();
   if (msg.includes('prix') || msg.includes('tarif')) {
@@ -20,10 +20,9 @@ const getBotResponse = (message) => {
   if (msg.includes('bonjour') || msg.includes('salut')) {
     return { text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?" };
   }
-  // Si le bot ne comprend pas, il propose de créer un ticket
   return { 
     text: "Je ne suis pas sûr de comprendre. Voulez-vous que je crée un ticket pour qu'un membre de notre équipe vous contacte ?",
-    showCreateTicket: true // On ajoute un indicateur
+    showCreateTicket: true
   };
 };
 
@@ -32,7 +31,7 @@ function SupportChatPage() {
     { sender: 'bot', text: 'Bonjour ! Je suis l\'assistant virtuel de BATIClean. Comment puis-je vous aider ?' }
   ]);
   const [input, setInput] = useState('');
-  const [ticketCreated, setTicketCreated] = useState(false); // Pour ne créer qu'un seul ticket par session
+  const [ticketCreated, setTicketCreated] = useState(false);
   const messagesEndRef = useRef(null);
   const dispatch = useDispatch();
 
@@ -46,7 +45,6 @@ function SupportChatPage() {
     e.preventDefault();
     if (input.trim()) {
       const userMessage = { sender: 'user', text: input };
-      // On retire les anciens boutons "Créer un ticket"
       const cleanedMessages = messages.map(msg => ({ ...msg, showCreateTicket: false }));
       setMessages([...cleanedMessages, userMessage]);
       setInput('');
@@ -63,18 +61,24 @@ function SupportChatPage() {
       dispatch(createTicket({ messages })).unwrap(),
       {
         pending: 'Création du ticket...',
-        success: 'Ticket créé avec succès ! Notre équipe vous contactera bientôt.',
+        success: 'Ticket créé avec succès !',
         error: 'Erreur lors de la création du ticket.'
       }
-    );
-    setTicketCreated(true);
+    ).then(() => {
+        setTicketCreated(true); // On active la notice
+    });
   };
 
+  // Si le ticket est créé, on affiche la notice
+  if (ticketCreated) {
+    return <TicketCreatedNotice />;
+  }
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', p: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', p: 2 }}>
       <Typography variant="h4" gutterBottom>Service Client</Typography>
-      <Paper elevation={3} sx={{ flexGrow: 1, overflow: 'auto', p: 2, mb: 2 }}>
-        <List>
+      <Paper elevation={3} sx={{ flexGrow: 1, overflow: 'auto', p: 2, mb: 2, display: 'flex', flexDirection: 'column' }}>
+        <List sx={{ flexGrow: 1 }}>
           {messages.map((msg, index) => (
             <ListItem key={index} sx={{ flexDirection: 'column', alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
               <Box sx={{
@@ -84,9 +88,8 @@ function SupportChatPage() {
                 borderRadius: 2,
                 maxWidth: '70%'
               }}>
-                <ListItemText primary={msg.text} />
+                <Typography>{msg.text}</Typography>
               </Box>
-              {/* Affiche le bouton si le bot le propose et si aucun ticket n'a été créé */}
               {msg.showCreateTicket && !ticketCreated && (
                 <Button variant="contained" size="small" onClick={handleCreateTicket} sx={{ mt: 1 }}>
                   Créer un ticket
@@ -104,9 +107,8 @@ function SupportChatPage() {
           placeholder="Posez votre question ici..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={ticketCreated} // Désactive le champ après la création d'un ticket
         />
-        <IconButton type="submit" color="primary" sx={{ ml: 1 }} disabled={ticketCreated}>
+        <IconButton type="submit" color="primary" sx={{ ml: 1 }}>
           <SendIcon />
         </IconButton>
       </Box>

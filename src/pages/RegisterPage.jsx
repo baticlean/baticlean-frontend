@@ -1,18 +1,25 @@
-// src/pages/RegisterPage.jsx
 import React, { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Grid, Link, IconButton, InputAdornment } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { registerUser } from '../redux/authSlice';
-import CircularLoading from '../components/CircularLoading'; // Importer notre composant
+import CircularLoading from '../components/CircularLoading';
+import ReactivatedNotice from '../components/ReactivatedNotice.jsx'; // <-- 1. Importer le nouvel écran
 
 function RegisterPage() {
   const [formData, setFormData] = useState({ username: '', email: '', password: '', phoneNumber: '' });
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  // 2. Récupérer l'interrupteur 'justReactivated' depuis Redux
+  const { justReactivated } = useSelector((state) => state.auth);
+
+  // 3. Ajouter la condition d'affichage
+  if (justReactivated) {
+    return <ReactivatedNotice />;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,11 +34,7 @@ function RegisterPage() {
     toast.promise(
       dispatch(registerUser(formData)).unwrap(),
       {
-        pending: {
-          render() {
-            return <CircularLoading message="Inscription en cours..." />;
-          },
-        },
+        pending: { render() { return <CircularLoading message="Inscription en cours..." />; } },
         success: {
           render() {
             setTimeout(() => navigate('/login'), 2000);
@@ -84,9 +87,7 @@ function RegisterPage() {
               />
             </Grid>
           </Grid>
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
-            S'inscrire
-          </Button>
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>S'inscrire</Button>
           <Grid container justifyContent="flex-end">
             <Grid item>
               <Link component={RouterLink} to="/login" variant="body2">

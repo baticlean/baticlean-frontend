@@ -11,10 +11,11 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
-    "@mui/icons-material": "^5.15.0",
+    "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.15.20",
     "@reduxjs/toolkit": "^2.2.5",
     "axios": "^1.7.2",
+    "date-fns": "^4.1.0",
     "framer-motion": "^11.2.12",
     "icons": "^1.0.0",
     "jwt-decode": "^4.0.0",
@@ -25,7 +26,7 @@
     "react-toastify": "^10.0.5",
     "redux": "^5.0.1",
     "socket.io-client": "^4.8.1",
-    "swiper": "^11.1.4"
+    "swiper": "^11.2.10"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
