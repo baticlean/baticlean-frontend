@@ -6,9 +6,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
-
-// NOUVEAU : On importe le composant de transition
 import LoginTransition from './components/LoginTransition.jsx';
+
+// NOUVEAU : On importe la bannière de cookies
+import CookieConsent from './components/CookieConsent.jsx';
 
 import MainLayout from './layout/MainLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -54,8 +55,7 @@ const router = createBrowserRouter([
     path: '/',
     element: <ProtectedRoute />,
     children: [
-      { path: 'banned', element: <BannedPage /> }, 
-      // NOUVEAU : On ajoute la route pour notre animation de bienvenue
+      { path: 'banned', element: <BannedPage /> },
       { path: 'welcome', element: <LoginTransition /> },
       {
         element: <AuthStatusHandler />,
@@ -98,6 +98,8 @@ function App() {
         pauseOnHover
         theme="colored"
       />
+      {/* NOUVEAU : On ajoute la bannière de cookies ici pour qu'elle soit visible partout */}
+      <CookieConsent />
     </>
   );
 }

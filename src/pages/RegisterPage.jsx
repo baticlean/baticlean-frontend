@@ -8,7 +8,7 @@ import { registerUser } from '../redux/authSlice.js';
 import CircularLoading from '../components/CircularLoading.jsx';
 
 // NOUVEAU : Importations pour le champ de téléphone intelligent
-import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input';
+import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input/min';
 import 'react-phone-number-input/style.css'; // Importation des styles
 import './PhoneNumber.css'; // On va créer ce fichier pour les styles personnalisés
 
