@@ -1,11 +1,12 @@
+/* Vos styles existants pour le body (inchangés) */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
 }
-/* ----- AJOUTER CE CODE À LA FIN DU FICHIER ----- */
 
+/* Vos styles pour le conteneur des toasts, qui les centre (inchangés) */
 .Toastify__toast-container {
   display: flex;
   justify-content: center;
@@ -19,9 +20,41 @@ body {
   pointer-events: none; /* Permet de cliquer à travers le conteneur */
 }
 
-.Toastify__toast {
+
+/* =================================================================== */
+/* ## STYLES CORRIGÉS ET FUSIONNÉS POUR LES NOTIFICATIONS ## */
+/* =================================================================== */
+
+/* Style pour les notifications de succès, erreur, info, etc. (forme de pilule) */
+/* On combine vos styles de taille avec mes styles pour les bords arrondis. */
+.Toastify__toast--success,
+.Toastify__toast--error,
+.Toastify__toast--warning,
+.Toastify__toast--info,
+.Toastify__toast--default {
+  border-radius: 50px !important;
   pointer-events: auto; /* Rend les notifications cliquables */
   width: auto;
   min-width: 250px;
   max-width: 90%;
+}
+
+
+/* Style SPÉCIFIQUE pour le toast de chargement circulaire */
+.loading-toast-container {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  width: 100px;
+  height: 100px;
+  pointer-events: auto; /* Le rend cliquable aussi */
+}
+
+/* On s'assure que le contenu du toast de chargement remplit bien le cercle */
+.loading-toast-container .Toastify__toast-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100%;
+  height: 100%;
 }

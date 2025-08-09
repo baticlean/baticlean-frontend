@@ -1,9 +1,14 @@
+// src/App.jsx
+
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
+
+// NOUVEAU : On importe le composant de transition
+import LoginTransition from './components/LoginTransition.jsx';
 
 import MainLayout from './layout/MainLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -21,8 +26,11 @@ import AdminReclamationsPage from './pages/AdminReclamationsPage.jsx';
 import SupportChatPage from './pages/SupportChatPage.jsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
 import TermsPage from './pages/TermsPage.jsx';
-// --- NOUVELLE PAGE IMPORTÉE ---
 import UserTicketsPage from './pages/UserTicketsPage.jsx';
+import TemporaryLockPage from './pages/TemporaryLockPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -35,6 +43,9 @@ const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'temporary-lock', element: <TemporaryLockPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password/:token', element: <ResetPasswordPage /> },
     ],
   },
   { path: "/privacy", element: <PrivacyPolicyPage /> },
@@ -44,6 +55,8 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       { path: 'banned', element: <BannedPage /> }, 
+      // NOUVEAU : On ajoute la route pour notre animation de bienvenue
+      { path: 'welcome', element: <LoginTransition /> },
       {
         element: <AuthStatusHandler />,
         children: [
@@ -53,7 +66,6 @@ const router = createBrowserRouter([
               { path: "home", element: <HomePage /> },
               { path: "profile", element: <ProfilePage /> },
               { path: "my-bookings", element: <MyBookingsPage /> },
-              // --- NOUVELLE ROUTE AJOUTÉE ---
               { path: "my-tickets", element: <UserTicketsPage /> },
               { path: "support-chat", element: <SupportChatPage /> },
               { path: "admin/users", element: <AdminUsersPage /> },
@@ -61,6 +73,7 @@ const router = createBrowserRouter([
               { path: "admin/tickets", element: <AdminTicketsPage /> },
               { path: "admin/bookings", element: <AdminBookingsPage /> },
               { path: "admin/reclamations", element: <AdminReclamationsPage /> },
+              { path: "admin/maintenance", element: <MaintenanceAdminPage /> },
             ],
           },
         ],

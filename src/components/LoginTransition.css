@@ -1,0 +1,40 @@
+/* src/components/LoginTransition.css */
+
+.transition-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #121212; /* Fond sombre */
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.expanding-circle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #8A2387 30%, #E94057 90%);
+}
+
+.text-container {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    color: white;
+}
+
+.welcome-text {
+    font-weight: bold !important;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.username-text {
+    color: #e0e0e0 !important;
+    font-weight: 300 !important;
+}

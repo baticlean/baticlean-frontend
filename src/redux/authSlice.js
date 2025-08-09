@@ -16,21 +16,28 @@ const getUserFromToken = (token) => {
 
 export const loginUser = createAsyncThunk('auth/login', async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/api/login`, userData);
-      localStorage.setItem('authToken', response.data.authToken);
-      return response.data;
+        const response = await axios.post(`${API_URL}/api/login`, userData);
+        localStorage.setItem('authToken', response.data.authToken);
+        return response.data;
     } catch (error) {
-      const errorPayload = { message: error.response?.data?.message || 'Erreur de connexion', authToken: error.response?.data?.authToken };
-      return rejectWithValue(errorPayload);
+        if (error.response) {
+            const errorPayload = { 
+                message: error.response.data.message || 'Erreur de connexion', 
+                status: error.response.status,
+                authToken: error.response.data.authToken 
+            };
+            return rejectWithValue(errorPayload);
+        }
+        return rejectWithValue({ message: 'Erreur réseau ou serveur indisponible.' });
     }
 });
 
 export const registerUser = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/api/register`, userData);
-      return response.data;
+        const response = await axios.post(`${API_URL}/api/register`, userData);
+        return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Erreur d'inscription");
+        return rejectWithValue(error.response?.data?.message || "Erreur d'inscription");
     }
 });
 
@@ -77,7 +84,13 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(loginUser.pending, (state) => { 
+        // ==========================================================
+        // LA CORRECTION EST ICI : CETTE LIGNE EST DÉSACTIVÉE
+        // state.loading = true; //
+        // ==========================================================
+        state.error = null; 
+      })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload.authToken;
@@ -85,13 +98,17 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message;
+        state.error = action.payload; 
         if (action.payload.authToken) {
             state.token = action.payload.authToken;
             state.user = getUserFromToken(action.payload.authToken);
         }
       })
-      .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(registerUser.pending, (state) => { 
+        // On le désactive aussi pour l'inscription par cohérence
+        // state.loading = true; //
+        state.error = null; 
+      })
       .addCase(registerUser.fulfilled, (state) => { state.loading = false; })
       .addCase(registerUser.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
   },

@@ -1,12 +1,35 @@
+// Fichier : frontend/src/socket/socket.js
+
 import { io } from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL;
 let socket;
 
-export const connectSocket = () => {
-  if (!socket) {
-    socket = io(API_URL);
+export const connectSocket = (userId) => {
+  if (socket && socket.connected) {
+    return;
   }
+  if (socket) {
+    socket.disconnect();
+  }
+
+  socket = io(API_URL, {
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+    transports: ['websocket'],
+  });
+
+  socket.on('connect', () => {
+    console.log('✅ Connecté au serveur WebSocket avec l\'ID:', socket.id);
+    if (userId) {
+      socket.emit('addUser', userId);
+    }
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log(`🔌 Déconnecté du serveur WebSocket. Raison: ${reason}`);
+  });
 };
 
 export const disconnectSocket = () => {
@@ -15,6 +38,17 @@ export const disconnectSocket = () => {
     socket = null;
   }
 };
+
+// --- Fonctions génériques pour émettre des événements ---
+
+/**
+ * ✅ NOUVELLE FONCTION : Émet un événement pour marquer les messages comme lus.
+ * @param {object} data - Contient le ticketId et le readerId.
+ */
+export const emitMarkMessagesAsRead = (data) => {
+    if (socket) socket.emit('markMessagesAsRead', data);
+};
+
 
 // --- Fonctions pour l'utilisateur ---
 export const addUserSocket = (userId) => {
@@ -89,6 +123,14 @@ export const offBookingDeleted = () => {
   if (socket) socket.off('bookingDeleted');
 };
 
+export const onBookingStatusChanged = (callback) => {
+    if (socket) socket.on('bookingStatusChanged', callback);
+};
+
+export const offBookingStatusChanged = () => {
+    if (socket) socket.off('bookingStatusChanged');
+};
+
 
 // --- Fonctions pour les tickets ---
 export const onNewTicket = (callback) => {
@@ -107,7 +149,6 @@ export const offTicketDeleted = () => {
   if (socket) socket.off('ticketDeleted');
 };
 
-// --- AJOUTÉES ICI ---
 export const onTicketUpdated = (callback) => {
   if (socket) socket.on('ticketUpdated', callback);
 };

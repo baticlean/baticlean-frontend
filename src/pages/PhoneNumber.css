@@ -1,0 +1,22 @@
+/* src/pages/PhoneNumber.css (ou là où se trouve votre RegisterPage.jsx) */
+
+.phone-input-container .PhoneInputInput {
+  /* On adapte le style pour qu'il ressemble à un champ Material-UI */
+  height: 56px;
+  padding: 16.5px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.23);
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.phone-input-container .PhoneInputInput:focus {
+  border-color: #1976d2; /* Couleur de focus de Material-UI */
+  outline: 1px solid #1976d2;
+}
+
+.phone-input-container .PhoneInputCountry {
+  margin: 0 10px;
+}

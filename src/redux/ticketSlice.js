@@ -1,7 +1,11 @@
+// src/redux/ticketSlice.js
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+// --- THUNKS ---
 
 export const createTicket = createAsyncThunk('tickets/create', async (ticketData, { getState, rejectWithValue }) => {
     try {
@@ -12,29 +16,29 @@ export const createTicket = createAsyncThunk('tickets/create', async (ticketData
     } catch (error) { return rejectWithValue(error.response.data.message); }
 });
 
-export const fetchAllTickets = createAsyncThunk('tickets/fetchAll', async (_, { getState, rejectWithValue }) => {
+export const fetchAllTickets = createAsyncThunk('tickets/fetchAll', async (archived = false, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`${API_URL}/api/tickets`, config);
-        return response.data;
+        const response = await axios.get(`${API_URL}/api/tickets?archived=${archived}`, config);
+        return { tickets: response.data, archived };
     } catch (error) { return rejectWithValue(error.response.data.message); }
 });
 
-export const fetchUserTickets = createAsyncThunk('tickets/fetchUser', async (_, { getState, rejectWithValue }) => {
+export const fetchUserTickets = createAsyncThunk('tickets/fetchUser', async (archived = false, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`${API_URL}/api/tickets/my-tickets`, config);
-        return response.data;
+        const response = await axios.get(`${API_URL}/api/tickets/my-tickets?archived=${archived}`, config);
+        return { tickets: response.data, archived };
     } catch (error) { return rejectWithValue(error.response.data.message); }
 });
 
-export const addMessageToTicket = createAsyncThunk('tickets/addMessage', async ({ ticketId, text }, { getState, rejectWithValue }) => {
+export const addMessageToTicket = createAsyncThunk('tickets/addMessage', async ({ ticketId, formData }, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.post(`${API_URL}/api/tickets/${ticketId}/messages`, { text }, config);
+        const response = await axios.post(`${API_URL}/api/tickets/${ticketId}/messages`, formData, config);
         return response.data;
     } catch (error) { return rejectWithValue(error.response.data.message); }
 });
@@ -66,11 +70,51 @@ export const hideTicket = createAsyncThunk('tickets/hide', async (ticketId, { ge
     } catch (error) { return rejectWithValue(error.response.data.message); }
 });
 
+export const archiveTicket = createAsyncThunk('tickets/archive', async ({ ticketId, archive }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        await axios.patch(`${API_URL}/api/tickets/${ticketId}/archive`, { archive }, config);
+        return { ticketId, archive };
+    } catch (error) {
+        return rejectWithValue(error.response.data.message);
+    }
+});
+
+export const editMessage = createAsyncThunk('tickets/editMessage', async ({ ticketId, messageId, text }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/messages/${messageId}/edit`, { text }, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+export const deleteMessage = createAsyncThunk('tickets/deleteMessage', async ({ ticketId, messageId }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.delete(`${API_URL}/api/tickets/${ticketId}/messages/${messageId}`, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+export const reactToMessage = createAsyncThunk('tickets/reactToMessage', async ({ ticketId, messageId, emoji }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/messages/${messageId}/react`, { emoji }, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
 const ticketSlice = createSlice({
     name: 'tickets',
     initialState: {
         adminTickets: [],
         userTickets: [],
+        archivedAdminTickets: [],
+        archivedUserTickets: [],
         loading: false,
         error: null,
     },
@@ -83,57 +127,93 @@ const ticketSlice = createSlice({
         },
         updateTicket: (state, action) => {
             const updatedTicket = action.payload;
-            const adminIndex = state.adminTickets.findIndex(t => t._id === updatedTicket._id);
-            if (adminIndex !== -1) state.adminTickets[adminIndex] = updatedTicket;
+            const updateList = (list) => list.map(t => t._id === updatedTicket._id ? updatedTicket : t);
+            state.adminTickets = updateList(state.adminTickets);
+            state.userTickets = updateList(state.userTickets);
+            state.archivedAdminTickets = updateList(state.archivedAdminTickets);
+            state.archivedUserTickets = updateList(state.archivedUserTickets);
+        },
+        processTicketArchive: (state, action) => {
+            const { _id, archivedByUser, archivedByAdmin } = action.payload;
+            const moveTicket = (source, destination, ticketId) => {
+                const ticketIndex = source.findIndex(t => t._id === ticketId);
+                if (ticketIndex > -1) {
+                    const [ticket] = source.splice(ticketIndex, 1);
+                    destination.unshift(ticket);
+                }
+            };
             
-            const userIndex = state.userTickets.findIndex(t => t._id === updatedTicket._id);
-            if (userIndex !== -1) state.userTickets[userIndex] = updatedTicket;
+            if (archivedByAdmin !== undefined) {
+                 if (archivedByAdmin) moveTicket(state.adminTickets, state.archivedAdminTickets, _id);
+                 else moveTicket(state.archivedAdminTickets, state.adminTickets, _id);
+            }
+            if (archivedByUser !== undefined) {
+                 if (archivedByUser) moveTicket(state.userTickets, state.archivedUserTickets, _id);
+                 else moveTicket(state.archivedUserTickets, state.userTickets, _id);
+            }
         }
     },
     extraReducers: (builder) => {
-        const handlePending = (state) => { state.loading = true; };
-        const handleRejected = (state, action) => { state.loading = false; state.error = action.payload; };
-
         builder
-            .addCase(fetchAllTickets.pending, handlePending)
+            .addCase(createTicket.fulfilled, (state, action) => {
+                state.userTickets.unshift(action.payload);
+            })
             .addCase(fetchAllTickets.fulfilled, (state, action) => {
-                state.loading = false;
-                state.adminTickets = action.payload;
+                const { tickets, archived } = action.payload;
+                if (archived) {
+                    state.archivedAdminTickets = tickets;
+                } else {
+                    state.adminTickets = tickets;
+                }
             })
-            .addCase(fetchAllTickets.rejected, handleRejected)
-            
-            .addCase(fetchUserTickets.pending, handlePending)
             .addCase(fetchUserTickets.fulfilled, (state, action) => {
-                state.loading = false;
-                state.userTickets = action.payload;
+                 const { tickets, archived } = action.payload;
+                if (archived) {
+                    state.archivedUserTickets = tickets;
+                } else {
+                    state.userTickets = tickets;
+                }
             })
-            .addCase(fetchUserTickets.rejected, handleRejected)
-            
             .addCase(hideTicket.fulfilled, (state, action) => {
                 state.adminTickets = state.adminTickets.filter(t => t._id !== action.payload);
             })
-            .addCase(markTicketAsRead.fulfilled, (state, action) => {
-                const updatedTicket = action.payload;
-                const userIndex = state.userTickets.findIndex(t => t._id === updatedTicket._id);
-                if (userIndex !== -1) state.userTickets[userIndex] = updatedTicket;
-            })
-            .addCase(addMessageToTicket.fulfilled, (state, action) => {
-                const updatedTicket = action.payload;
-                const adminIndex = state.adminTickets.findIndex(t => t._id === updatedTicket._id);
-                if (adminIndex !== -1) state.adminTickets[adminIndex] = updatedTicket;
-                
-                const userIndex = state.userTickets.findIndex(t => t._id === updatedTicket._id);
-                if (userIndex !== -1) state.userTickets[userIndex] = updatedTicket;
-            })
-            .addCase(claimTicket.fulfilled, (state, action) => {
-                const updatedTicket = action.payload;
-                const adminIndex = state.adminTickets.findIndex(t => t._id === updatedTicket._id);
-                if (adminIndex !== -1) {
-                    state.adminTickets[adminIndex] = updatedTicket;
+            .addCase(archiveTicket.fulfilled, (state, action) => {
+                const { ticketId, archive } = action.payload;
+                const moveTicket = (source, destination) => {
+                    const ticketIndex = source.findIndex(t => t._id === ticketId);
+                    if (ticketIndex > -1) {
+                        const [ticketToMove] = source.splice(ticketIndex, 1);
+                        destination.unshift(ticketToMove);
+                    }
+                };
+                if (archive) {
+                    moveTicket(state.adminTickets, state.archivedAdminTickets);
+                    moveTicket(state.userTickets, state.archivedUserTickets);
+                } else {
+                    moveTicket(state.archivedAdminTickets, state.adminTickets);
+                    moveTicket(state.archivedUserTickets, state.userTickets);
                 }
-            });
+            })
+            .addMatcher(
+                (action) => [
+                    addMessageToTicket.fulfilled.type, 
+                    claimTicket.fulfilled.type, 
+                    markTicketAsRead.fulfilled.type, 
+                    editMessage.fulfilled.type, 
+                    deleteMessage.fulfilled.type,
+                    reactToMessage.fulfilled.type
+                ].includes(action.type),
+                (state, action) => {
+                    const updatedTicket = action.payload;
+                    const updateList = (list) => list.map(t => t._id === updatedTicket._id ? updatedTicket : t);
+                    state.adminTickets = updateList(state.adminTickets);
+                    state.userTickets = updateList(state.userTickets);
+                    state.archivedAdminTickets = updateList(state.archivedAdminTickets);
+                    state.archivedUserTickets = updateList(state.archivedUserTickets);
+                }
+            );
     },
 });
 
-export const { addAdminTicket, removeAdminTicket, updateTicket } = ticketSlice.actions;
+export const { addAdminTicket, removeAdminTicket, updateTicket, processTicketArchive } = ticketSlice.actions;
 export default ticketSlice.reducer;

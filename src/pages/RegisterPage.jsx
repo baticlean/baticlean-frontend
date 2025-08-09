@@ -2,53 +2,71 @@ import React, { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Grid, Link, IconButton, InputAdornment } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { registerUser } from '../redux/authSlice';
-import CircularLoading from '../components/CircularLoading';
-import ReactivatedNotice from '../components/ReactivatedNotice.jsx'; // <-- 1. Importer le nouvel écran
+import { registerUser } from '../redux/authSlice.js';
+import CircularLoading from '../components/CircularLoading.jsx';
+
+// NOUVEAU : Importations pour le champ de téléphone intelligent
+import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css'; // Importation des styles
+import './PhoneNumber.css'; // On va créer ce fichier pour les styles personnalisés
 
 function RegisterPage() {
-  const [formData, setFormData] = useState({ username: '', email: '', password: '', phoneNumber: '' });
+  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
+  
+  // NOUVEAU : État séparé pour le numéro de téléphone
+  const [phoneNumber, setPhoneNumber] = useState('');
+  
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // 2. Récupérer l'interrupteur 'justReactivated' depuis Redux
-  const { justReactivated } = useSelector((state) => state.auth);
-
-  // 3. Ajouter la condition d'affichage
-  if (justReactivated) {
-    return <ReactivatedNotice />;
-  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'phoneNumber' && !/^\d*$/.test(value)) {
-      return;
-    }
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    toast.promise(
-      dispatch(registerUser(formData)).unwrap(),
-      {
-        pending: { render() { return <CircularLoading message="Inscription en cours..." />; } },
-        success: {
-          render() {
-            setTimeout(() => navigate('/login'), 2000);
-            return 'Inscription réussie ! Vous pouvez maintenant vous connecter.';
-          }
-        },
-        error: {
-          render({ data }) {
-            if (typeof data === 'string') return data;
-            return 'Une erreur est survenue. Veuillez vérifier vos informations.';
-          }
-        }
-      }
-    );
+
+    // NOUVEAU : Validation renforcée avant l'envoi
+    // 1. Valider l'email pour un format TLD (.com, .fr, etc.)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(formData.email)) {
+        toast.error("Veuillez entrer une adresse email valide.");
+        return;
+    }
+
+    // 2. Valider le numéro de téléphone
+    if (!phoneNumber || !isPossiblePhoneNumber(phoneNumber)) {
+        toast.error("Veuillez entrer un numéro de téléphone valide.");
+        return;
+    }
+    
+    // On combine les données du formulaire avec le numéro de téléphone formaté
+    const finalFormData = { ...formData, phoneNumber };
+
+    const toastId = toast.loading(<CircularLoading message="Inscription en cours..." />);
+    dispatch(registerUser(finalFormData))
+      .unwrap()
+      .then(() => {
+        toast.update(toastId, {
+          render: 'Inscription réussie ! Vous pouvez maintenant vous connecter.',
+          type: 'success',
+          isLoading: false,
+          autoClose: 2000,
+        });
+        setTimeout(() => navigate('/login'), 2000);
+      })
+      .catch((error) => {
+        toast.update(toastId, {
+          render: error || "Une erreur est survenue.",
+          type: 'error',
+          isLoading: false,
+          autoClose: 3000,
+        });
+      });
   };
 
   return (
@@ -63,9 +81,20 @@ function RegisterPage() {
             <Grid item xs={12}>
               <TextField name="email" type="email" required fullWidth label="Adresse Email" value={formData.email} onChange={handleChange} />
             </Grid>
+            
+            {/* NOUVEAU : Remplacement du champ de téléphone */}
             <Grid item xs={12}>
-              <TextField name="phoneNumber" required fullWidth label="Numéro de téléphone" value={formData.phoneNumber} onChange={handleChange} />
+                <PhoneInput
+                    placeholder="Numéro de téléphone"
+                    value={phoneNumber}
+                    onChange={setPhoneNumber}
+                    defaultCountry="CI" // Pays par défaut (Côte d'Ivoire), sera détecté automatiquement par le navigateur
+                    international
+                    countryCallingCodeEditable={true}
+                    className="phone-input-container"
+                />
             </Grid>
+            
             <Grid item xs={12}>
               <TextField
                 name="password"
@@ -75,6 +104,7 @@ function RegisterPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={handleChange}
+                helperText="Doit contenir 9 caractères (3 chiffres, et 1 caractère spécial)."
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -87,7 +117,16 @@ function RegisterPage() {
               />
             </Grid>
           </Grid>
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>S'inscrire</Button>
+          <Button 
+            type="submit" 
+            fullWidth 
+            variant="contained" 
+            sx={{ mt: 3, mb: 2 }}
+            // NOUVEAU : Le bouton est désactivé si le numéro est invalide
+            disabled={phoneNumber ? !isPossiblePhoneNumber(phoneNumber) : true}
+          >
+            S'inscrire
+          </Button>
           <Grid container justifyContent="flex-end">
             <Grid item>
               <Link component={RouterLink} to="/login" variant="body2">
