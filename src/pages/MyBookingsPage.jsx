@@ -1,3 +1,5 @@
+// src/pages/MyBookingsPage.jsx
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserBookings, cancelBooking, toggleHideBooking } from '../redux/bookingSlice.js';
@@ -9,18 +11,20 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import StarIcon from '@mui/icons-material/Star';
 import { toast } from 'react-toastify';
 import BookingTimeline from '../components/BookingTimeline.jsx';
-import CustomModal from '../components/CustomModal.jsx'; // Assurez-vous d'avoir un composant modal
+import CustomModal from '../components/CustomModal.jsx';
+import ReviewModal from '../components/ReviewModal.jsx';
 
 function MyBookingsPage() {
     const dispatch = useDispatch();
-    // ✅ On récupère les deux listes de réservations
+    const { token } = useSelector((state) => state.auth);
     const { userBookings, hiddenUserBookings, loading, error } = useSelector((state) => state.bookings);
     const [showHidden, setShowHidden] = useState(false);
     const [bookingToCancel, setBookingToCancel] = useState(null);
+    const [bookingToReview, setBookingToReview] = useState(null);
 
-    // ✅ On recharge les données quand on bascule la vue
     useEffect(() => {
         dispatch(fetchUserBookings(showHidden));
     }, [dispatch, showHidden]);
@@ -35,13 +39,12 @@ function MyBookingsPage() {
                     error: 'Impossible d\'annuler cette réservation.'
                 }
             );
-            setBookingToCancel(null); // Ferme le modal
+            setBookingToCancel(null);
         }
     };
 
-    // ✅ Nouvelle fonction pour masquer/afficher
     const handleToggleHide = (e, bookingId) => {
-        e.stopPropagation(); // Important pour ne pas ouvrir/fermer l'accordéon
+        e.stopPropagation();
         const actionText = showHidden ? 'afficher' : 'masquer';
         toast.promise(
             dispatch(toggleHideBooking({ bookingId, hide: !showHidden })).unwrap(),
@@ -53,7 +56,13 @@ function MyBookingsPage() {
         );
     };
     
-    // ✅ On choisit la bonne liste à afficher
+    const handleCloseReviewModal = (reviewSubmitted) => {
+        setBookingToReview(null);
+        if (reviewSubmitted) {
+            dispatch(fetchUserBookings(showHidden));
+        }
+    };
+    
     const bookingsToDisplay = showHidden ? hiddenUserBookings : userBookings;
 
     if (loading && bookingsToDisplay.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
@@ -84,13 +93,9 @@ function MyBookingsPage() {
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <Chip 
                                             label={booking.status} 
-                                            color={
-                                                booking.status === 'Confirmée' ? 'success' : 
-                                                booking.status === 'Terminée' ? 'primary' :
-                                                booking.status === 'Annulée' ? 'error' : 'info'
-                                            } 
+                                            color={booking.status === 'Confirmée' ? 'success' : booking.status === 'Terminée' ? 'primary' : booking.status === 'Annulée' ? 'error' : 'info'} 
                                         />
-                                        <Tooltip title={showHidden ? "Afficher la réservation" : "Masquer la réservation"}>
+                                        <Tooltip title={showHidden ? "Afficher" : "Masquer"}>
                                             <IconButton size="small" onClick={(e) => handleToggleHide(e, booking._id)}>
                                                 {showHidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
                                             </IconButton>
@@ -112,6 +117,14 @@ function MyBookingsPage() {
                                             Annuler la réservation
                                         </Button>
                                     )}
+                                    {!showHidden && booking.status === 'Terminée' && !booking.hasBeenReviewed && (
+                                        <Button variant="contained" color="primary" size="small" startIcon={<StarIcon />} onClick={() => setBookingToReview(booking)}>
+                                            Laisser un avis
+                                        </Button>
+                                    )}
+                                    {booking.status === 'Terminée' && booking.hasBeenReviewed && (
+                                         <Chip label="Vous avez déjà laissé un avis" color="success" variant="outlined" size="small" />
+                                    )}
                                 </Box>
                             </AccordionDetails>
                         </Accordion>
@@ -119,19 +132,22 @@ function MyBookingsPage() {
                 )}
             </Container>
 
-            {/* Modal de confirmation pour l'annulation */}
             <CustomModal
                 open={!!bookingToCancel}
                 onClose={() => setBookingToCancel(null)}
                 title="Confirmer l'annulation"
                 content="Êtes-vous sûr de vouloir annuler cette réservation ? Cette action est irréversible."
-                actions={
-                    <>
-                        <Button onClick={() => setBookingToCancel(null)}>Retour</Button>
-                        <Button onClick={handleConfirmCancel} color="error">Confirmer l'annulation</Button>
-                    </>
-                }
+                actions={<><Button onClick={() => setBookingToCancel(null)}>Retour</Button><Button onClick={handleConfirmCancel} color="error">Confirmer</Button></>}
             />
+            
+            {bookingToReview && (
+                <ReviewModal 
+                    open={!!bookingToReview}
+                    onClose={handleCloseReviewModal}
+                    booking={bookingToReview}
+                    token={token}
+                />
+            )}
         </>
     );
 }

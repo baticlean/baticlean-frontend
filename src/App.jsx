@@ -32,6 +32,7 @@ import TemporaryLockPage from './pages/TemporaryLockPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
+import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -68,6 +69,7 @@ const router = createBrowserRouter([
               { path: "my-bookings", element: <MyBookingsPage /> },
               { path: "my-tickets", element: <UserTicketsPage /> },
               { path: "support-chat", element: <SupportChatPage /> },
+               { path: "admin/dashboard", element: <AdminDashboardPage /> },
               { path: "admin/users", element: <AdminUsersPage /> },
               { path: "admin/services", element: <AdminServicesPage /> },
               { path: "admin/tickets", element: <AdminTicketsPage /> },
