@@ -55,6 +55,7 @@ function MaintenancePage() {
 
           <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
             Cette page est en maintenance pour améliorations. Veuillez réessayer plus tard ou contacter l'administration si le problème est d'une urgence extrême.
+          CONTACTS: +2250768388770/ +2250716896099/ baticlean225@gmail.com/ Facebook: BATICLEAN.ci
             <br/><br/>
             BATIClean s'excuse pour les désagréments occasionnés.
           </Typography>
