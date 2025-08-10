@@ -15,64 +15,58 @@ function TemporaryLockPage() {
                 justifyContent: 'center',
                 alignItems: 'center',
                 minHeight: '80vh',
-                background: 'linear-gradient(to top, #f3e5f5, #e1bee7)',
                 p: 2
             }}
         >
             <Paper
                 elevation={6}
                 sx={{
-                    p: 4,
+                    p: { xs: 2, sm: 4 }, // Padding adaptatif
                     borderRadius: '16px',
                     textAlign: 'center',
                     maxWidth: '500px',
-                    border: '1px solid',
-                    borderColor: 'primary.main',
-                    boxShadow: '0px 10px 30px rgba(138, 43, 226, 0.2)',
-                    overflow: 'hidden' // Pour que les animations ne dépassent pas
+                    overflow: 'hidden'
                 }}
             >
-                {/* ✅ 1. ANIMATION DU CADENAS */}
                 <motion.div
-                    animate={{ rotateY: [0, 360] }} // Fait tourner l'icône sur elle-même
-                    transition={{
-                        duration: 2.5,
-                        repeat: Infinity, // Répète l'animation à l'infini
-                        ease: "easeInOut"
-                    }}
+                    animate={{ rotateY: [0, 360] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                     style={{ marginBottom: '16px' }}
                 >
-                    {/* On alterne entre les deux icônes pour l'effet d'ouverture/fermeture */}
                     <motion.div
                         animate={{ opacity: [1, 0, 1] }}
                         transition={{ duration: 2.5, repeat: Infinity }}
                     >
-                        <LockIcon color="primary" sx={{ fontSize: 60 }} />
+                        <LockIcon color="primary" sx={{ fontSize: { xs: 40, sm: 60 } }} />
                     </motion.div>
                     <motion.div
                         animate={{ opacity: [0, 1, 0] }}
                         transition={{ duration: 2.5, repeat: Infinity }}
-                        style={{ marginTop: '-60px' }} // Superpose les icônes
+                        style={{ marginTop: '-60px' }}
                     >
-                        <LockOpenIcon color="primary" sx={{ fontSize: 60 }} />
+                        <LockOpenIcon color="primary" sx={{ fontSize: { xs: 40, sm: 60 }, mt: {xs: '-20px', sm: 0} }} />
                     </motion.div>
                 </motion.div>
 
-                <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                <Typography 
+                  variant="h4" 
+                  component="h1" 
+                  gutterBottom 
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    color: 'primary.main',
+                    fontSize: { xs: '1.5rem', sm: '2.125rem' } // Taille de police adaptative
+                  }}
+                >
                     Accès Bloqué Temporairement
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 3 }}>
                     Vous avez effectué trop de tentatives de connexion. Pour des raisons de sécurité, votre accès est bloqué pour les 15 prochaines minutes.
                 </Typography>
 
-                {/* ✅ 2. ANIMATION DU BOUTON */}
                 <motion.div
-                    animate={{ scale: [1, 1.05, 1] }} // Effet de "respiration"
-                    transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 >
                     <Button
                         variant="contained"
@@ -81,7 +75,7 @@ function TemporaryLockPage() {
                             background: 'linear-gradient(45deg, #8A2387 30%, #E94057 90%)',
                             color: 'white',
                             fontWeight: 'bold',
-                            width: '100%' // Pour que l'animation soit bien centrée
+                            width: '100%'
                         }}
                     >
                         Retour à l'accueil

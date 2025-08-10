@@ -95,7 +95,8 @@ function ResetPasswordPage() {
                 ) : (
                     <>
                         <ErrorOutlineIcon color="error" sx={{ fontSize: 60, mb: 2 }} />
-                        <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                        <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold',
+                           color: 'error.main' }}>
                             Échec de la réinitialisation
                         </Typography>
                         <Box sx={{ textAlign: 'left', mt: 2, mb: 3 }}>

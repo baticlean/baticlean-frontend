@@ -91,7 +91,7 @@ function ForgotPasswordPage() {
                 type="button"
                 fullWidth
                 variant="outlined"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/login')}
                 startIcon={<ArrowBackIcon />}
                 sx={{ mb: 2 }}
               >
