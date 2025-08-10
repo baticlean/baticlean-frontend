@@ -106,8 +106,9 @@ function ResetPasswordPage() {
                                     <ListItemText primary="Ce lien a expiré (il n'est valide que pour une durée limitée)." />
                                 </ListItem>
                                 <ListItem>
+                                   
                                     <ListItemIcon sx={{minWidth: '30px'}}>3.</ListItemIcon>
-                                    <ListItemText primary="Problème réseau, vérifiez votre connectivité." />
+                                    <ListItemText primary="Le mot de passe ne respecte pas la forme acceptée de 9 caractères dont 3 chiffres et 1 caractère spécial comme @." />
                                 </ListItem>
                             </List>
                         </Box>
