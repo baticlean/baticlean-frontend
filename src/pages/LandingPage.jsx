@@ -81,16 +81,23 @@ function LandingPage() {
           transition={{ duration: 1.5, ease: 'easeOut' }}
         >
           <Typography 
-            variant="h2" 
-            component="h1" 
-            sx={{ 
-              fontWeight: 'bold', 
-              mb: 2,
-              animation: `${colorAnimationMain} 8s linear infinite`
-            }}
-          >
-            BATIClean, un bâtiment propre pour une image forte.
-          </Typography>
+  variant="h2" 
+  component="h1" 
+  sx={{ 
+    fontWeight: 'bold', 
+    mb: 2,
+    animation: `${colorAnimationMain} 8s linear infinite`,
+    
+    // ✅ AJOUT : La taille de la police s'adapte à la taille de l'écran
+    fontSize: {
+      xs: '2.2rem', // Taille pour les écrans très petits (mobile)
+      sm: '3rem',   // Taille pour les petits écrans (tablette)
+      md: '4rem'    // Taille pour les écrans moyens et grands (bureau)
+    }
+  }}
+>
+  BATIClean, un bâtiment propre pour une image forte.
+</Typography>
 
           <Typography 
             variant="h5"

@@ -17,13 +17,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, setToken } from '../redux/authSlice.js';
 import { toast } from 'react-toastify';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material'; // AJOUT : ArrowBackIcon
 import ReactivatedNotice from '../components/ReactivatedNotice.jsx';
 
 function LoginPage() {
   const [formData, setFormData] = useState({ login: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -44,8 +44,7 @@ function LoginPage() {
     dispatch(loginUser(formData))
       .unwrap()
       .then(() => {
-        // ✅ MODIFIÉ : On redirige vers la page d'animation au lieu de /home
-        navigate('/welcome'); 
+        navigate('/welcome');
       })
       .catch((error) => {
         if (error && error.status === 429) {
@@ -58,7 +57,7 @@ function LoginPage() {
         }
       })
       .finally(() => {
-        setLoading(false); 
+        setLoading(false);
       });
   };
 
@@ -100,27 +99,44 @@ function LoginPage() {
               ),
             }}
           />
-          <Button 
-            type="submit" 
-            fullWidth 
-            variant="contained" 
-            sx={{ mt: 3, mb: 2 }} 
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 1 }} // MODIFIÉ : mb: 1
             disabled={loading}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Se Connecter'}
           </Button>
-          <Grid container>
-            <Grid item xs>
+
+          {/* AJOUT : Bouton Retour */}
+          <Button
+            type="button"
+            fullWidth
+            variant="outlined"
+            onClick={() => navigate('/')}
+            startIcon={<ArrowBackIcon />}
+            sx={{ mb: 2 }}
+            disabled={loading}
+          >
+            Retour
+          </Button>
+
+          {/* ----- C'EST ICI LA MODIFICATION ----- */}
+          <Grid container sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+            <Grid item xs={12} sm>
               <Link component={RouterLink} to="/forgot-password" variant="body2">
                 Mot de passe oublié ?
               </Link>
             </Grid>
-            <Grid item>
+            <Grid item xs={12} sm="auto">
               <Link component={RouterLink} to="/register" variant="body2">
                 Pas encore de compte ? S'inscrire
               </Link>
             </Grid>
           </Grid>
+          {/* ----- FIN DE LA MODIFICATION ----- */}
+
         </Box>
       </Box>
     </Container>

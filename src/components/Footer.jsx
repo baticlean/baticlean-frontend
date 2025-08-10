@@ -8,9 +8,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // On définit nos icônes dans un tableau pour pouvoir les manipuler
 const initialIcons = [
-  { id: 'whatsapp', href: 'https://wa.me/VOTRE_NUMERO_ICI', icon: <WhatsAppIcon /> },
-  { id: 'facebook', href: 'https://facebook.com/VOTRE_PAGE_ICI', icon: <FacebookIcon /> },
-  { id: 'email', href: 'mailto:VOTRE_EMAIL_ICI', icon: <EmailIcon /> },
+   { id: 'whatsapp', href: import.meta.env.VITE_WHATSAPP_URL, icon: <WhatsAppIcon /> },
+  { id: 'facebook', href: import.meta.env.VITE_FACEBOOK_URL, icon: <FacebookIcon /> },
+  { id: 'email', href: import.meta.env.VITE_EMAIL_ADDRESS, icon: <EmailIcon /> },
 ];
 
 function Footer() {

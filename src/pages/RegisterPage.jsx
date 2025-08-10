@@ -1,23 +1,20 @@
+// src/pages/RegisterPage.jsx
+
 import React, { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Grid, Link, IconButton, InputAdornment } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material'; // AJOUT : ArrowBackIcon
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { registerUser } from '../redux/authSlice.js';
 import CircularLoading from '../components/CircularLoading.jsx';
-
-// NOUVEAU : Importations pour le champ de téléphone intelligent
 import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input/min';
-import 'react-phone-number-input/style.css'; // Importation des styles
-import './PhoneNumber.css'; // On va créer ce fichier pour les styles personnalisés
+import 'react-phone-number-input/style.css';
+import './PhoneNumber.css';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
-  
-  // NOUVEAU : État séparé pour le numéro de téléphone
   const [phoneNumber, setPhoneNumber] = useState('');
-  
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,23 +27,18 @@ function RegisterPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // NOUVEAU : Validation renforcée avant l'envoi
-    // 1. Valider l'email pour un format TLD (.com, .fr, etc.)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!emailRegex.test(formData.email)) {
-        toast.error("Veuillez entrer une adresse email valide.");
-        return;
+      toast.error("Veuillez entrer une adresse email valide.");
+      return;
     }
 
-    // 2. Valider le numéro de téléphone
     if (!phoneNumber || !isPossiblePhoneNumber(phoneNumber)) {
-        toast.error("Veuillez entrer un numéro de téléphone valide.");
-        return;
+      toast.error("Veuillez entrer un numéro de téléphone valide.");
+      return;
     }
-    
-    // On combine les données du formulaire avec le numéro de téléphone formaté
-    const finalFormData = { ...formData, phoneNumber };
 
+    const finalFormData = { ...formData, phoneNumber };
     const toastId = toast.loading(<CircularLoading message="Inscription en cours..." />);
     dispatch(registerUser(finalFormData))
       .unwrap()
@@ -81,20 +73,17 @@ function RegisterPage() {
             <Grid item xs={12}>
               <TextField name="email" type="email" required fullWidth label="Adresse Email" value={formData.email} onChange={handleChange} />
             </Grid>
-            
-            {/* NOUVEAU : Remplacement du champ de téléphone */}
             <Grid item xs={12}>
-                <PhoneInput
-                    placeholder="Numéro de téléphone"
-                    value={phoneNumber}
-                    onChange={setPhoneNumber}
-                    defaultCountry="CI" // Pays par défaut (Côte d'Ivoire), sera détecté automatiquement par le navigateur
-                    international
-                    countryCallingCodeEditable={true}
-                    className="phone-input-container"
-                />
+              <PhoneInput
+                placeholder="Numéro de téléphone"
+                value={phoneNumber}
+                onChange={setPhoneNumber}
+                defaultCountry="CI"
+                international
+                countryCallingCodeEditable={true}
+                className="phone-input-container"
+              />
             </Grid>
-            
             <Grid item xs={12}>
               <TextField
                 name="password"
@@ -117,16 +106,28 @@ function RegisterPage() {
               />
             </Grid>
           </Grid>
-          <Button 
-            type="submit" 
-            fullWidth 
-            variant="contained" 
-            sx={{ mt: 3, mb: 2 }}
-            // NOUVEAU : Le bouton est désactivé si le numéro est invalide
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 1 }} // MODIFIÉ : mb: 1
             disabled={phoneNumber ? !isPossiblePhoneNumber(phoneNumber) : true}
           >
             S'inscrire
           </Button>
+
+          {/* AJOUT : Bouton Retour */}
+          <Button
+            type="button"
+            fullWidth
+            variant="outlined"
+            sx={{ mb: 2 }}
+            onClick={() => navigate(-1)}
+            startIcon={<ArrowBackIcon />}
+          >
+            Retour
+          </Button>
+
           <Grid container justifyContent="flex-end">
             <Grid item>
               <Link component={RouterLink} to="/login" variant="body2">
