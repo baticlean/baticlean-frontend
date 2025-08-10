@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Stepper, Step, StepLabel, StepIcon } from '@mui/material';
+import { Box, Typography, Stepper, Step, StepLabel } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -7,36 +7,36 @@ import CancelIcon from '@mui/icons-material/Cancel';
 
 const steps = ['En attente', 'Confirmée', 'Terminée'];
 
-// On améliore l'icône pour gérer tous les cas
 const CustomStepIcon = (props) => {
   const { active, completed, error } = props;
 
   if (error) {
     return <CancelIcon color="error" />;
   }
-
   if (completed) {
     return <CheckCircleIcon color="success" />;
   }
-
   if (active) {
-    // Animation pour l'étape en cours
     return <RadioButtonCheckedIcon color="primary" sx={{ 
       animation: 'pulse 1.5s infinite',
       borderRadius: '50%',
     }} />;
   }
-
   return <RadioButtonUncheckedIcon color="disabled" />;
 };
 
 function BookingTimeline({ timeline, currentStatus }) {
-  let activeStep = steps.indexOf(currentStatus);
+  let activeStep;
   const isCancelled = currentStatus === 'Annulée';
 
-  // Si la réservation est terminée, toutes les étapes sont complétées
-  if (currentStatus === 'Terminée') {
+  if (isCancelled) {
+    activeStep = -1;
+  } else if (currentStatus === 'Confirmée') {
+    activeStep = steps.indexOf('Terminée');
+  } else if (currentStatus === 'Terminée') {
     activeStep = steps.length;
+  } else {
+    activeStep = steps.indexOf(currentStatus);
   }
 
   return (
@@ -50,20 +50,27 @@ function BookingTimeline({ timeline, currentStatus }) {
           }
         `}
       </style>
-      <Stepper activeStep={isCancelled ? -1 : activeStep} orientation="vertical">
+      <Stepper activeStep={activeStep} orientation="vertical">
         {steps.map((label, index) => {
           const event = timeline.find(e => e.status === label);
           const isError = isCancelled && index >= steps.indexOf('Confirmée');
 
           return (
-            <Step key={label}>
+            <Step key={label} completed={index < activeStep}>
               <StepLabel
                 StepIconComponent={(props) => <CustomStepIcon {...props} error={isError} />}
               >
                 <Typography variant="h6">{label}</Typography>
                 {event && (
                   <Typography variant="caption">
-                    {new Date(event.updatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    {/* ✅ MODIFIÉ : Affiche maintenant la date ET l'heure */}
+                    {new Date(event.eventDate).toLocaleString('fr-FR', { 
+                        day: '2-digit', 
+                        month: 'long', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
                   </Typography>
                 )}
               </StepLabel>
@@ -72,9 +79,22 @@ function BookingTimeline({ timeline, currentStatus }) {
         })}
       </Stepper>
       {isCancelled && (
-         <Typography color="error" sx={{ mt: 2, fontWeight: 'bold' }}>
+        <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'error.main', ml: '12px'}}>
+          <Typography color="error" sx={{ fontWeight: 'bold' }}>
             ❌ Réservation Annulée
-         </Typography>
+          </Typography>
+          {timeline.find(e => e.status === 'Annulée') && (
+            <Typography variant="caption" color="error">
+                {new Date(timeline.find(e => e.status === 'Annulée').eventDate).toLocaleString('fr-FR', { 
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}
+            </Typography>
+          )}
+        </Box>
       )}
     </Box>
   );
