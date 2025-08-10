@@ -1,4 +1,4 @@
-// src/pages/AdminTicketsPage.jsx
+// src/pages/AdminTicketsPage.jsx (Mis à jour)
 
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -8,33 +8,47 @@ import { toast } from 'react-toastify';
 import TicketConversationModal from '../components/TicketConversationModal.jsx';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
+import HandymanIcon from '@mui/icons-material/Handyman'; // Pour "Prendre la main"
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer'; // Pour "Prendre en charge"
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Pour "Consulter"
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'; // Pour "Marquer comme lu"
+
 
 const UnreadIcon = () => <>⛔</>;
 
 function AdminTicketsPage() {
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
-    // ✅ On récupère les tickets actifs ET archivés
     const { adminTickets, archivedAdminTickets, loading, error } = useSelector((state) => state.tickets);
 
     const [selectedTicketId, setSelectedTicketId] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [showArchived, setShowArchived] = useState(false); // ✅ État pour afficher les archives
+    const [showArchived, setShowArchived] = useState(false);
 
-    // ✅ On charge les bons tickets quand le composant se monte ou que l'on bascule la vue
     useEffect(() => {
         dispatch(fetchAllTickets(showArchived));
     }, [dispatch, showArchived]);
 
+    // ✅ MODIFICATION ICI : Gérer les différents messages de succès/erreur
     const handleClaim = (ticketId) => {
-        toast.promise(dispatch(claimTicket(ticketId)).unwrap(), {
-            pending: 'Prise en charge du ticket...',
-            success: 'Vous avez pris le ticket en charge !',
-            error: 'Ce ticket est déjà pris en charge.'
-        });
+        dispatch(claimTicket(ticketId))
+            .unwrap()
+            .then((result) => {
+                // `result` est la valeur retournée par le thunk : { ticket, overrideMessage }
+                if (result.overrideMessage) {
+                    // Message d'information pour le super admin qui prend la main
+                    toast.info(result.overrideMessage);
+                } else {
+                    // Message de succès standard
+                    toast.success('Vous avez pris le ticket en charge !');
+                }
+            })
+            .catch((errorMessage) => {
+                // Affiche le message d'erreur du backend ("Déjà pris en charge par...")
+                toast.error(errorMessage);
+            });
     };
     
-    // ✅ Nouvelle fonction pour archiver/désarchiver
     const handleArchiveToggle = (ticketId, isArchived) => {
         const action = isArchived ? 'Désarchivage' : 'Archivage';
         toast.promise(
@@ -61,7 +75,6 @@ function AdminTicketsPage() {
         setSelectedTicketId(null);
     };
     
-    // ✅ On choisit la bonne liste de tickets à afficher
     const ticketsToDisplay = showArchived ? archivedAdminTickets : adminTickets;
 
     if (loading) return <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />;
@@ -71,16 +84,21 @@ function AdminTicketsPage() {
         <Box sx={{ p: 3 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                  <Typography variant="h4" gutterBottom>
-                    {showArchived ? 'Tickets Archivés' : 'Gestion des Tickets'}
+                     {showArchived ? 'Tickets Archivés' : 'Gestion des Tickets'}
                  </Typography>
                  <FormControlLabel
-                    control={<Switch checked={showArchived} onChange={() => setShowArchived(!showArchived)} />}
-                    label="Voir les archives"
-                />
+                     control={<Switch checked={showArchived} onChange={() => setShowArchived(!showArchived)} />}
+                     label="Voir les archives"
+                 />
             </Stack>
 
             {ticketsToDisplay.map((ticket) => {
                 const isUnreadForCurrentAdmin = !ticket.readByAdmins.includes(currentUser?._id);
+                
+                // ✅ MODIFICATION ICI : Logique des boutons plus claire
+                const isAssignedToOther = ticket.assignedAdmin && ticket.assignedAdmin._id !== currentUser._id;
+                const canTakeOver = isAssignedToOther && currentUser.role === 'superAdmin' && !showArchived;
+                const canClaim = !ticket.assignedAdmin && !showArchived;
                 
                 return (
                     <Paper 
@@ -120,17 +138,29 @@ function AdminTicketsPage() {
                                 {showArchived ? 'Sortir' : 'Archiver'}
                             </Button>
 
-                            {!ticket.assignedAdmin && !showArchived ? (
-                                <Button variant="contained" color="primary" onClick={() => handleClaim(ticket._id)}>Répondre</Button>
-                            ) : (
-                                <Button 
-                                    variant="contained" 
-                                    color={isUnreadForCurrentAdmin ? "primary" : "secondary"}
-                                    onClick={() => handleOpenModal(ticket)}
-                                >
-                                    {isUnreadForCurrentAdmin ? "Voir la réponse" : "Continuer"}
+                            {/* Bouton "Prendre en charge" */}
+                            {canClaim && (
+                                <Button variant="contained" color="primary" startIcon={<QuestionAnswerIcon />} onClick={() => handleClaim(ticket._id)}>
+                                    Prendre en charge
                                 </Button>
                             )}
+
+                             {/* Bouton "Prendre la main" pour Super Admin */}
+                            {canTakeOver && (
+                                <Button variant="contained" color="warning" startIcon={<HandymanIcon />} onClick={() => handleClaim(ticket._id)}>
+                                    Prendre la main
+                                </Button>
+                            )}
+
+                            {/* Bouton "Consulter" / "Voir" */}
+                            <Button 
+                                variant="contained" 
+                                color={isUnreadForCurrentAdmin ? "primary" : "secondary"}
+                                onClick={() => handleOpenModal(ticket)}
+                                startIcon={<VisibilityIcon />}
+                            >
+                                {isUnreadForCurrentAdmin ? "Voir la réponse" : "Consulter"}
+                            </Button>
                         </Box>
                     </Paper>
                 )

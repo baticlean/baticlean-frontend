@@ -1,179 +1,235 @@
+// src/redux/ticketSlice.js (Mis à jour)
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- THUNKS ASYNCHRONES POUR LES APPELS API ---
+// --- THUNKS ---
 
-export const fetchServices = createAsyncThunk(
-  'services/fetchAll',
-  async (filters = {}, { rejectWithValue }) => {
+export const createTicket = createAsyncThunk('tickets/create', async (ticketData, { getState, rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/api/services`, { params: filters });
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Erreur lors du chargement des services.');
-    }
-  }
-);
-
-export const createService = createAsyncThunk(
-  'services/create',
-  async (serviceData, { getState, rejectWithValue }) => {
-    try {
-      const { token } = getState().auth;
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.post(`${API_URL}/api/services`, serviceData, config);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
-    }
-  }
-);
-
-export const updateService = createAsyncThunk(
-  'services/update',
-  async ({ id, serviceData }, { getState, rejectWithValue }) => {
-    try {
-      const { token } = getState().auth;
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.put(`${API_URL}/api/services/${id}`, serviceData, config);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
-    }
-  }
-);
-
-export const deleteService = createAsyncThunk(
-  'services/delete',
-  async (id, { getState, rejectWithValue }) => {
-    try {
-      const { token } = getState().auth;
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`${API_URL}/api/services/${id}`, config);
-      return id;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
-    }
-  }
-);
-
-export const likeService = createAsyncThunk(
-  'services/like',
-  async (serviceId, { getState, rejectWithValue }) => {
-    try {
-      const { token } = getState().auth;
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.patch(`${API_URL}/api/services/${serviceId}/like`, null, config);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
-    }
-  }
-);
-
-// ====================================================================
-// ✅ LA CORRECTION EST ICI
-// ====================================================================
-export const addComment = createAsyncThunk(
-  'services/addComment',
-  // 1. On récupère `parentId` depuis l'objet dispatché (avec `null` comme valeur par défaut)
-  async ({ serviceId, text, parentId = null }, { getState, rejectWithValue }) => {
-    try {
-      const { token } = getState().auth;
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      
-      // 2. On prépare le corps de la requête avec `text` ET `parentId`
-      const body = { text, parentId };
-
-      // 3. On envoie le corps complet à l'API. La réponse de l'API doit être 
-      //    l'objet SERVICE entièrement mis à jour.
-      const response = await axios.post(`${API_URL}/api/services/${serviceId}/comment`, body, config);
-      return response.data; 
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
-    }
-  }
-);
-// ====================================================================
-
-export const updateComment = createAsyncThunk('services/updateComment', async ({ serviceId, commentId, text }, { getState, rejectWithValue }) => { try { const { token } = getState().auth; const config = { headers: { Authorization: `Bearer ${token}` } }; const response = await axios.put(`${API_URL}/api/services/${serviceId}/comments/${commentId}`, { text }, config); return response.data; } catch (error) { return rejectWithValue(error.response?.data?.message); } });
-export const deleteComment = createAsyncThunk('services/deleteComment', async ({ serviceId, commentId }, { getState, rejectWithValue }) => { try { const { token } = getState().auth; const config = { headers: { Authorization: `Bearer ${token}` } }; const response = await axios.delete(`${API_URL}/api/services/${serviceId}/comments/${commentId}`, config); return response.data; } catch (error) { return rejectWithValue(error.response?.data?.message); } });
-export const likeComment = createAsyncThunk('services/likeComment', async ({ serviceId, commentId }, { getState, rejectWithValue }) => { try { const { token } = getState().auth; const config = { headers: { Authorization: `Bearer ${token}` } }; const response = await axios.patch(`${API_URL}/api/services/${serviceId}/comments/${commentId}/like`, null, config); return response.data; } catch (error) { return rejectWithValue(error.response?.data?.message); } });
-
-
-const serviceSlice = createSlice({
-  name: 'services',
-  initialState: {
-    items: [],
-    loading: false,
-    error: null,
-    filters: {
-      search: '',
-      category: '',
-      sortBy: 'createdAt',
-    },
-  },
-  reducers: {
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-    updateServiceFromSocket: (state, action) => {
-      const updatedService = action.payload;
-      const index = state.items.findIndex(item => item._id === updatedService._id);
-      if (index !== -1) {
-        state.items[index] = updatedService;
-      } else {
-        state.items.unshift(updatedService);
-      }
-    },
-    removeServiceFromSocket: (state, action) => {
-      const { _id: serviceId } = action.payload;
-      state.items = state.items.filter(item => item._id !== serviceId);
-    }
-  },
-  extraReducers: (builder) => {
-    const updateOneService = (state, action) => {
-      const index = state.items.findIndex(item => item._id === action.payload._id);
-      if (index !== -1) {
-        state.items[index] = action.payload;
-      }
-    };
-
-    builder
-      .addCase(fetchServices.pending, (state) => { 
-        state.loading = true; 
-      })
-      .addCase(fetchServices.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchServices.rejected, (state, action) => { 
-        state.loading = false; 
-        state.error = action.payload; 
-      })
-      
-      .addCase(createService.fulfilled, (state, action) => {
-        // Géré par `updateServiceFromSocket`
-      })
-      .addCase(updateService.fulfilled, (state, action) => {
-        // Géré par `updateServiceFromSocket`
-      })
-      .addCase(deleteService.fulfilled, (state, action) => {
-        // Géré par `removeServiceFromSocket`
-      })
-      
-      .addCase(likeService.fulfilled, updateOneService)
-      .addCase(addComment.fulfilled, updateOneService) // ✨ Cette ligne fonctionnera maintenant correctement
-      .addCase(updateComment.fulfilled, updateOneService)
-      .addCase(deleteComment.fulfilled, updateOneService)
-      .addCase(likeComment.fulfilled, updateOneService);
-  },
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.post(`${API_URL}/api/tickets`, ticketData, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
 });
 
-export const { setFilters, updateServiceFromSocket, removeServiceFromSocket } = serviceSlice.actions;
+export const fetchAllTickets = createAsyncThunk('tickets/fetchAll', async (archived = false, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.get(`${API_URL}/api/tickets?archived=${archived}`, config);
+        return { tickets: response.data, archived };
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
 
-export default serviceSlice.reducer;
+export const fetchUserTickets = createAsyncThunk('tickets/fetchUser', async (archived = false, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.get(`${API_URL}/api/tickets/my-tickets?archived=${archived}`, config);
+        return { tickets: response.data, archived };
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
 
+export const addMessageToTicket = createAsyncThunk('tickets/addMessage', async ({ ticketId, formData }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.post(`${API_URL}/api/tickets/${ticketId}/messages`, formData, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+export const markTicketAsRead = createAsyncThunk('tickets/markAsRead', async (ticketId, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/mark-as-read`, null, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+// ✅ MODIFICATION ICI : Gérer la nouvelle réponse du backend
+export const claimTicket = createAsyncThunk('tickets/claim', async (ticketId, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/claim`, null, config);
+        
+        // Le backend renvoie soit { ticket, overrideMessage }, soit le ticket seul.
+        // On normalise la réponse pour avoir une structure constante.
+        if (response.data.ticket) {
+            return { ticket: response.data.ticket, overrideMessage: response.data.overrideMessage };
+        } else {
+            return { ticket: response.data, overrideMessage: undefined };
+        }
+    } catch (error) { 
+        // L'erreur contient déjà le bon message ("Déjà pris par...")
+        return rejectWithValue(error.response.data.message); 
+    }
+});
+
+
+export const hideTicket = createAsyncThunk('tickets/hide', async (ticketId, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        await axios.patch(`${API_URL}/api/tickets/${ticketId}/hide`, null, config);
+        return ticketId;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+export const archiveTicket = createAsyncThunk('tickets/archive', async ({ ticketId, archive }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        await axios.patch(`${API_URL}/api/tickets/${ticketId}/archive`, { archive }, config);
+        return { ticketId, archive };
+    } catch (error) {
+        return rejectWithValue(error.response.data.message);
+    }
+});
+
+export const editMessage = createAsyncThunk('tickets/editMessage', async ({ ticketId, messageId, text }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/messages/${messageId}/edit`, { text }, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+export const deleteMessage = createAsyncThunk('tickets/deleteMessage', async ({ ticketId, messageId }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.delete(`${API_URL}/api/tickets/${ticketId}/messages/${messageId}`, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+export const reactToMessage = createAsyncThunk('tickets/reactToMessage', async ({ ticketId, messageId, emoji }, { getState, rejectWithValue }) => {
+    try {
+        const { token } = getState().auth;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/messages/${messageId}/react`, { emoji }, config);
+        return response.data;
+    } catch (error) { return rejectWithValue(error.response.data.message); }
+});
+
+const ticketSlice = createSlice({
+    name: 'tickets',
+    initialState: {
+        adminTickets: [],
+        userTickets: [],
+        archivedAdminTickets: [],
+        archivedUserTickets: [],
+        loading: false,
+        error: null,
+    },
+    reducers: {
+        addAdminTicket: (state, action) => {
+            state.adminTickets.unshift(action.payload);
+        },
+        removeAdminTicket: (state, action) => {
+            state.adminTickets = state.adminTickets.filter(t => t._id !== action.payload._id);
+        },
+        updateTicket: (state, action) => {
+            const updatedTicket = action.payload;
+            const updateList = (list) => list.map(t => t._id === updatedTicket._id ? updatedTicket : t);
+            state.adminTickets = updateList(state.adminTickets);
+            state.userTickets = updateList(state.userTickets);
+            state.archivedAdminTickets = updateList(state.archivedAdminTickets);
+            state.archivedUserTickets = updateList(state.archivedUserTickets);
+        },
+        processTicketArchive: (state, action) => {
+            const { _id, archivedByUser, archivedByAdmin } = action.payload;
+            const moveTicket = (source, destination, ticketId) => {
+                const ticketIndex = source.findIndex(t => t._id === ticketId);
+                if (ticketIndex > -1) {
+                    const [ticket] = source.splice(ticketIndex, 1);
+                    destination.unshift(ticket);
+                }
+            };
+            
+            if (archivedByAdmin !== undefined) {
+                 if (archivedByAdmin) moveTicket(state.adminTickets, state.archivedAdminTickets, _id);
+                 else moveTicket(state.archivedAdminTickets, state.adminTickets, _id);
+            }
+            if (archivedByUser !== undefined) {
+                 if (archivedByUser) moveTicket(state.userTickets, state.archivedUserTickets, _id);
+                 else moveTicket(state.archivedUserTickets, state.userTickets, _id);
+            }
+        }
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(createTicket.fulfilled, (state, action) => {
+                state.userTickets.unshift(action.payload);
+            })
+            .addCase(fetchAllTickets.fulfilled, (state, action) => {
+                const { tickets, archived } = action.payload;
+                if (archived) {
+                    state.archivedAdminTickets = tickets;
+                } else {
+                    state.adminTickets = tickets;
+                }
+            })
+            .addCase(fetchUserTickets.fulfilled, (state, action) => {
+                const { tickets, archived } = action.payload;
+                if (archived) {
+                    state.archivedUserTickets = tickets;
+                } else {
+                    state.userTickets = tickets;
+                }
+            })
+            .addCase(hideTicket.fulfilled, (state, action) => {
+                state.adminTickets = state.adminTickets.filter(t => t._id !== action.payload);
+            })
+            .addCase(archiveTicket.fulfilled, (state, action) => {
+                const { ticketId, archive } = action.payload;
+                const moveTicket = (source, destination) => {
+                    const ticketIndex = source.findIndex(t => t._id === ticketId);
+                    if (ticketIndex > -1) {
+                        const [ticketToMove] = source.splice(ticketIndex, 1);
+                        destination.unshift(ticketToMove);
+                    }
+                };
+                if (archive) {
+                    moveTicket(state.adminTickets, state.archivedAdminTickets);
+                    moveTicket(state.userTickets, state.archivedUserTickets);
+                } else {
+                    moveTicket(state.archivedAdminTickets, state.adminTickets);
+                    moveTicket(state.archivedUserTickets, state.userTickets);
+                }
+            })
+            .addMatcher(
+                (action) => [
+                    addMessageToTicket.fulfilled.type, 
+                    claimTicket.fulfilled.type, // Action incluse ici
+                    markTicketAsRead.fulfilled.type, 
+                    editMessage.fulfilled.type, 
+                    deleteMessage.fulfilled.type,
+                    reactToMessage.fulfilled.type
+                ].includes(action.type),
+                (state, action) => {
+                    // ✅ MODIFICATION ICI : Gérer le payload qui peut être { ticket } ou juste un ticket
+                    const updatedTicket = action.payload.ticket || action.payload;
+                    
+                    const updateList = (list) => list.map(t => {
+                        return t._id === updatedTicket._id ? { ...t, ...updatedTicket } : t;
+                    });
+                    state.adminTickets = updateList(state.adminTickets);
+                    state.userTickets = updateList(state.userTickets);
+                    state.archivedAdminTickets = updateList(state.archivedAdminTickets);
+                    state.archivedUserTickets = updateList(state.archivedUserTickets);
+                }
+            );
+    },
+});
+
+export const { addAdminTicket, removeAdminTicket, updateTicket, processTicketArchive } = ticketSlice.actions;
+export default ticketSlice.reducer;
