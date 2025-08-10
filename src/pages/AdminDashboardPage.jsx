@@ -9,7 +9,6 @@ import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Mini-composant pour les cartes de statistiques
 const StatCard = ({ title, value, icon }) => (
     <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
         {icon}
@@ -48,9 +47,8 @@ function AdminDashboardPage() {
     if (error) {
         return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
     }
-    // ✅ SÉCURITÉ : On vérifie que les données de stats existent avant de continuer.
     if (!stats || !stats.stats) {
-        return <Alert severity="warning" sx={{ m: 3 }}>Aucune donnée de tableau de bord à afficher.</Alert>;
+        return <Alert severity="warning" sx={{ m: 3 }}>Aucune donnée à afficher pour le tableau de bord.</Alert>;
     }
 
     return (
@@ -69,7 +67,6 @@ function AdminDashboardPage() {
                     <Paper sx={{ p: 2, height: '100%' }}>
                         <Typography variant="h6" gutterBottom>Derniers Avis Clients</Typography>
                         <List>
-                            {/* ✅ SÉCURITÉ : On vérifie que la liste d'avis existe. */}
                             {stats.recentReviews && stats.recentReviews.map((review, index) => (
                                 <React.Fragment key={review?._id || index}>
                                     <ListItem alignItems="flex-start">
@@ -88,9 +85,8 @@ function AdminDashboardPage() {
                     <Paper sx={{ p: 2, height: '100%' }}>
                         <Typography variant="h6" gutterBottom>Derniers Tickets en Attente</Typography>
                         <List>
-                            {/* ✅ SÉCURITÉ : On vérifie que la liste de tickets ET que l'utilisateur du ticket existent. */}
                             {stats.recentTickets && stats.recentTickets.map((ticket, index) => (
-                                ticket && ticket.user ? ( // La vérification la plus importante !
+                                ticket && ticket.user ? (
                                     <React.Fragment key={ticket._id}>
                                         <ListItem>
                                             <ListItemAvatar><Avatar>{ticket.user.username.charAt(0)}</Avatar></ListItemAvatar>
@@ -101,7 +97,7 @@ function AdminDashboardPage() {
                                         </ListItem>
                                         {index < stats.recentTickets.length - 1 && <Divider component="li" />}
                                     </React.Fragment>
-                                ) : null // Si le ticket ou son utilisateur n'existe pas, on n'affiche rien.
+                                ) : null
                             ))}
                         </List>
                     </Paper>
