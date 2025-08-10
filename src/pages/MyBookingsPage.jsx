@@ -106,7 +106,7 @@ function MyBookingsPage() {
                     <Typography>{showHidden ? 'Aucune réservation masquée.' : 'Vous n\'avez aucune réservation pour le moment.'}</Typography>
                 ) : (
                     bookingsToDisplay.map(booking => (
-                        <Accordion key={booking._id} defaultExpanded>
+                        <Accordion key={booking._id}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', pr: 2 }}>
                                     <Typography>
