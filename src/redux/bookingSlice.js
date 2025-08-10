@@ -86,31 +86,32 @@ export const fetchUnreadBookingCount = createAsyncThunk('bookings/fetchUnreadCou
     } catch (error) { return rejectWithValue(error.response?.data?.message); }
 });
 
-// ✅ C'EST CET EXPORT QUI EST IMPORTANT
-export const markUserBookingsAsRead = createAsyncThunk('bookings/markAsRead', async (_, { getState, rejectWithValue }) => {
-    try {
-        const { token } = getState().auth;
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        await axios.patch(`${API_URL}/api/bookings/mark-all-as-read`, null, config);
-        return; // Pas besoin de retourner de valeur
-    } catch (error) { return rejectWithValue(error.response?.data?.message); }
-});
-
+// ✅ NOUVELLE ACTION
 export const markOneBookingAsRead = createAsyncThunk('bookings/markOneAsRead', async (bookingId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
         const config = { headers: { Authorization: `Bearer ${token}` } };
+        // On ne se soucie pas de la réponse, on veut juste que le backend fasse le travail
         await axios.patch(`${API_URL}/api/bookings/${bookingId}/mark-as-read-by-user`, null, config);
-        return bookingId;
-    } catch (error) { return rejectWithValue(error.response?.data?.message); }
+        return bookingId; // On retourne l'ID pour savoir quelle réservation mettre à jour dans le state
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message);
+    }
 });
 
+
 // --- SLICE ---
+
 const bookingSlice = createSlice({
     name: 'bookings',
     initialState: {
-        userBookings: [], hiddenUserBookings: [], allBookings: [],
-        hiddenAdminBookings: [], loading: false, error: null, unreadCount: 0,
+        userBookings: [],
+        hiddenUserBookings: [],
+        allBookings: [],
+        hiddenAdminBookings: [],
+        loading: false,
+        error: null,
+        unreadCount: 0,
     },
     reducers: {
         updateBookingFromSocket: (state, action) => {
@@ -121,12 +122,16 @@ const bookingSlice = createSlice({
             state.allBookings = updateUserList(state.allBookings);
             state.hiddenAdminBookings = updateUserList(state.hiddenAdminBookings);
         },
-        addBooking: (state, action) => { state.allBookings.unshift(action.payload); },
+        addBooking: (state, action) => {
+            state.allBookings.unshift(action.payload);
+        },
         removeBooking: (state, action) => {
             state.allBookings = state.allBookings.filter(b => b._id !== action.payload._id);
             state.hiddenAdminBookings = state.hiddenAdminBookings.filter(b => b._id !== action.payload._id);
         },
-        resetUnreadBookingCount: (state) => { state.unreadCount = 0; }
+        resetUnreadBookingCount: (state) => {
+            state.unreadCount = 0;
+        }
     },
     extraReducers: (builder) => {
         const updateOneUserBooking = (state, action) => {
@@ -134,6 +139,7 @@ const bookingSlice = createSlice({
             const list = state.userBookings.find(b => b._id === bookingId) ? state.userBookings : state.hiddenUserBookings;
             const index = list.findIndex(b => b._id === bookingId);
             if (index !== -1) {
+                // Pour markOneBookingAsRead, on met juste à jour le champ `isReadByUser`
                 if (action.type === markOneBookingAsRead.fulfilled.type) {
                     list[index].isReadByUser = true;
                 } else {
@@ -142,29 +148,44 @@ const bookingSlice = createSlice({
             }
         };
         builder
-            .addCase(createBooking.fulfilled, (state, action) => { state.userBookings.unshift(action.payload); })
+            .addCase(createBooking.fulfilled, (state, action) => {
+                state.userBookings.unshift(action.payload);
+            })
             .addCase(fetchUserBookings.pending, (state) => { state.loading = true; })
             .addCase(fetchUserBookings.fulfilled, (state, action) => {
                 state.loading = false;
                 const { bookings, hidden } = action.payload;
-                if (hidden) { state.hiddenUserBookings = bookings; } else { state.userBookings = bookings; }
+                if (hidden) {
+                    state.hiddenUserBookings = bookings;
+                } else {
+                    state.userBookings = bookings;
+                }
                 state.unreadCount = state.userBookings.filter(b => !b.isReadByUser).length;
             })
             .addCase(fetchUserBookings.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+            
             .addCase(fetchAllBookings.pending, (state) => { state.loading = true; })
             .addCase(fetchAllBookings.fulfilled, (state, action) => {
                 state.loading = false;
                 const { bookings, hidden } = action.payload;
-                if (hidden) { state.hiddenAdminBookings = bookings; } else { state.allBookings = bookings; }
+                if (hidden) {
+                    state.hiddenAdminBookings = bookings;
+                } else {
+                    state.allBookings = bookings;
+                }
             })
             .addCase(fetchAllBookings.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+            
             .addCase(updateBookingStatus.fulfilled, (state, action) => {
                 const updated = action.payload;
                 const index = state.allBookings.findIndex(b => b._id === updated._id);
                 if (index !== -1) state.allBookings[index] = updated;
             })
             .addCase(cancelBooking.fulfilled, updateOneUserBooking)
+            
+            // ✅ ACTION LORSQUE LA NOUVELLE ACTION RÉUSSIT
             .addCase(markOneBookingAsRead.fulfilled, updateOneUserBooking)
+
             .addCase(hideBooking.fulfilled, (state, action) => {
                 const bookingId = action.payload;
                 const index = state.allBookings.findIndex(b => b._id === bookingId);
@@ -181,6 +202,7 @@ const bookingSlice = createSlice({
                     state.allBookings.unshift(bookingToRestore);
                 }
             })
+            
             .addCase(toggleHideBooking.fulfilled, (state, action) => {
                 const { bookingId, hide } = action.payload;
                 if (hide) {
@@ -197,10 +219,8 @@ const bookingSlice = createSlice({
                     }
                 }
             })
-            .addCase(fetchUnreadBookingCount.fulfilled, (state, action) => { state.unreadCount = action.payload; })
-            .addCase(markUserBookingsAsRead.fulfilled, (state) => {
-                state.unreadCount = 0;
-                state.userBookings.forEach(b => b.isReadByUser = true);
+            .addCase(fetchUnreadBookingCount.fulfilled, (state, action) => {
+                state.unreadCount = action.payload;
             });
     },
 });
