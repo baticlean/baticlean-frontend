@@ -1,6 +1,7 @@
+// src/pages/AdminBookingsPage.jsx (Corrigé)
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-// ✅ On importe les nouvelles actions
 import { fetchAllBookings, hideBooking, unhideBooking } from '../redux/bookingSlice.js';
 import { 
     Container, Typography, Box, Paper, Table, TableBody, TableCell, 
@@ -15,17 +16,14 @@ import BookingDetailsModal from '../components/BookingDetailsModal.jsx';
 
 function AdminBookingsPage() {
     const dispatch = useDispatch();
-    // ✅ On récupère les deux listes pour l'admin
     const { allBookings, hiddenAdminBookings, loading, error } = useSelector((state) => state.bookings);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [showHidden, setShowHidden] = useState(false);
 
     useEffect(() => {
-        // ✅ On charge les réservations en fonction de la vue (active ou masquée)
         dispatch(fetchAllBookings(showHidden));
     }, [dispatch, showHidden]);
     
-    // ✅ Gère le masquage et la restauration
     const handleToggleHide = (bookingId) => {
         const action = showHidden ? unhideBooking : hideBooking;
         const messages = showHidden 
@@ -45,11 +43,11 @@ function AdminBookingsPage() {
             <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                     <Typography variant="h4" gutterBottom>
-                        {showHidden ? 'Réservations Masquées' : 'Gestion des Réservations'}
+                        {showHidden ? 'Réservations Archivées' : 'Gestion des Réservations'}
                     </Typography>
                     <FormControlLabel
                         control={<Switch checked={showHidden} onChange={() => setShowHidden(!showHidden)} />}
-                        label="Voir les masquées"
+                        label="Voir les archives"
                     />
                 </Stack>
                 <TableContainer component={Paper}>
@@ -66,8 +64,9 @@ function AdminBookingsPage() {
                         <TableBody>
                             {bookingsToDisplay.map((booking) => (
                                 <TableRow key={booking._id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell>{booking.user?.username || 'N/A'}</TableCell>
-                                    <TableCell>{booking.service?.title || 'N/A'}</TableCell>
+                                    {/* ✅ SÉCURITÉ : On vérifie que les données existent */}
+                                    <TableCell>{booking.user ? booking.user.username : <Typography variant="caption" color="error">Utilisateur supprimé</Typography>}</TableCell>
+                                    <TableCell>{booking.service ? booking.service.title : <Typography variant="caption" color="error">Service supprimé</Typography>}</TableCell>
                                     <TableCell>{new Date(booking.bookingDate).toLocaleDateString()}</TableCell>
                                     <TableCell>{booking.status}</TableCell>
                                     <TableCell align="right">
@@ -76,9 +75,9 @@ function AdminBookingsPage() {
                                                 <VisibilityIcon />
                                             </IconButton>
                                         </Tooltip>
-                                        <Tooltip title={showHidden ? 'Restaurer' : 'Masquer'}>
+                                        <Tooltip title={showHidden ? 'Restaurer' : 'Archiver'}>
                                             <IconButton size="small" onClick={() => handleToggleHide(booking._id)}>
-                                                {showHidden ? <UnarchiveIcon /> : <ArchiveIcon color="error" />}
+                                                {showHidden ? <UnarchiveIcon /> : <ArchiveIcon color="action" />}
                                             </IconButton>
                                         </Tooltip>
                                     </TableCell>
@@ -88,7 +87,6 @@ function AdminBookingsPage() {
                     </Table>
                 </TableContainer>
             </Container>
-            {/* Le modal désactivera les actions si le statut est "Annulée" */}
             <BookingDetailsModal booking={selectedBooking} open={!!selectedBooking} onClose={() => setSelectedBooking(null)} />
         </>
     );

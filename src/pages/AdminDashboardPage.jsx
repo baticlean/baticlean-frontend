@@ -1,4 +1,4 @@
-// src/pages/AdminDashboardPage.jsx
+// src/pages/AdminDashboardPage.jsx (Corrigé)
 
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -48,31 +48,34 @@ function AdminDashboardPage() {
     if (error) {
         return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
     }
+    // ✅ AJOUT : Sécurité au cas où les stats ne chargent pas correctement
+    if (!stats) {
+        return <Alert severity="warning" sx={{ m: 3 }}>Aucune donnée à afficher pour le tableau de bord.</Alert>;
+    }
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Typography variant="h4" gutterBottom>Tableau de Bord</Typography>
             
-            {/* Cartes de statistiques */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Total Utilisateurs" value={stats.stats.totalUsers} icon={<PeopleAlt color="primary" sx={{ fontSize: 40 }} />} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Réservations en Attente" value={stats.stats.pendingBookings} icon={<BookOnline color="warning" sx={{ fontSize: 40 }} />} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouveaux Clients (7j)" value={stats.stats.newUsersLast7Days} icon={<PeopleAlt color="success" sx={{ fontSize: 40 }} />} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouvelles Réservations (7j)" value={stats.stats.newBookingsLast7Days} icon={<BookOnline color="info" sx={{ fontSize: 40 }} />} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Total Utilisateurs" value={stats.stats?.totalUsers || 0} icon={<PeopleAlt color="primary" sx={{ fontSize: 40 }} />} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Réservations en Attente" value={stats.stats?.pendingBookings || 0} icon={<BookOnline color="warning" sx={{ fontSize: 40 }} />} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouveaux Clients (7j)" value={stats.stats?.newUsersLast7Days || 0} icon={<PeopleAlt color="success" sx={{ fontSize: 40 }} />} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouvelles Réservations (7j)" value={stats.stats?.newBookingsLast7Days || 0} icon={<BookOnline color="info" sx={{ fontSize: 40 }} />} /></Grid>
             </Grid>
 
             <Grid container spacing={3}>
-                {/* Section des derniers avis */}
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 2, height: '100%' }}>
                         <Typography variant="h6" gutterBottom>Derniers Avis Clients</Typography>
                         <List>
-                            {stats.recentReviews.map((review, index) => (
-                                <React.Fragment key={review._id}>
+                            {/* ✅ SÉCURITÉ : On vérifie que recentReviews existe avant de mapper */}
+                            {stats.recentReviews && stats.recentReviews.map((review, index) => (
+                                <React.Fragment key={review?._id || index}>
                                     <ListItem alignItems="flex-start">
                                         <ListItemText
-                                            primary={<><Rating value={review.rating} readOnly size="small" /> pour "{review.serviceTitle}"</>}
-                                            secondary={<>"{review.comment}" - <Typography component="span" variant="body2" color="text.primary">{review.username}</Typography></>}
+                                            primary={<><Rating value={review?.rating || 0} readOnly size="small" /> pour "{review?.serviceTitle || 'Service supprimé'}"</>}
+                                            secondary={<>"{review?.comment}" - <Typography component="span" variant="body2" color="text.primary">{review?.username || 'Utilisateur supprimé'}</Typography></>}
                                         />
                                     </ListItem>
                                     {index < stats.recentReviews.length - 1 && <Divider component="li" />}
@@ -81,22 +84,24 @@ function AdminDashboardPage() {
                         </List>
                     </Paper>
                 </Grid>
-                {/* Section des derniers tickets */}
                 <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 2, height: '100%' }}>
                         <Typography variant="h6" gutterBottom>Derniers Tickets en Attente</Typography>
                         <List>
-                            {stats.recentTickets.map((ticket, index) => (
-                                <React.Fragment key={ticket._id}>
-                                    <ListItem>
-                                        <ListItemAvatar><Avatar>{ticket.user.username.charAt(0)}</Avatar></ListItemAvatar>
-                                        <ListItemText
-                                            primary={`Ticket de ${ticket.user.username}`}
-                                            secondary={`Ouvert le: ${new Date(ticket.createdAt).toLocaleDateString()}`}
-                                        />
-                                    </ListItem>
-                                    {index < stats.recentTickets.length - 1 && <Divider component="li" />}
-                                </React.Fragment>
+                            {/* ✅ SÉCURITÉ : On vérifie que recentTickets et ticket.user existent */}
+                            {stats.recentTickets && stats.recentTickets.map((ticket, index) => (
+                                ticket && ticket.user ? ( // La vérification la plus importante est ici
+                                    <React.Fragment key={ticket._id}>
+                                        <ListItem>
+                                            <ListItemAvatar><Avatar>{ticket.user.username.charAt(0)}</Avatar></ListItemAvatar>
+                                            <ListItemText
+                                                primary={`Ticket de ${ticket.user.username}`}
+                                                secondary={`Ouvert le: ${new Date(ticket.createdAt).toLocaleDateString()}`}
+                                            />
+                                        </ListItem>
+                                        {index < stats.recentTickets.length - 1 && <Divider component="li" />}
+                                    </React.Fragment>
+                                ) : null // Si ticket ou ticket.user n'existe pas, on n'affiche rien
                             ))}
                         </List>
                     </Paper>
