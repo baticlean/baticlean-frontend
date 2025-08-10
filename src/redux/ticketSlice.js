@@ -1,4 +1,4 @@
-// src/redux/ticketSlice.js
+// src/redux/ticketSlice.js (Mis à jour)
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
@@ -52,14 +52,26 @@ export const markTicketAsRead = createAsyncThunk('tickets/markAsRead', async (ti
     } catch (error) { return rejectWithValue(error.response.data.message); }
 });
 
+// ✅ MODIFICATION ICI : Gérer la nouvelle réponse du backend
 export const claimTicket = createAsyncThunk('tickets/claim', async (ticketId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.patch(`${API_URL}/api/tickets/${ticketId}/claim`, null, config);
-        return response.data;
-    } catch (error) { return rejectWithValue(error.response.data.message); }
+        
+        // Le backend renvoie soit { ticket, overrideMessage }, soit le ticket seul.
+        // On normalise la réponse pour avoir une structure constante.
+        if (response.data.ticket) {
+            return { ticket: response.data.ticket, overrideMessage: response.data.overrideMessage };
+        } else {
+            return { ticket: response.data, overrideMessage: undefined };
+        }
+    } catch (error) { 
+        // L'erreur contient déjà le bon message ("Déjà pris par...")
+        return rejectWithValue(error.response.data.message); 
+    }
 });
+
 
 export const hideTicket = createAsyncThunk('tickets/hide', async (ticketId, { getState, rejectWithValue }) => {
     try {
@@ -167,7 +179,7 @@ const ticketSlice = createSlice({
                 }
             })
             .addCase(fetchUserTickets.fulfilled, (state, action) => {
-                 const { tickets, archived } = action.payload;
+                const { tickets, archived } = action.payload;
                 if (archived) {
                     state.archivedUserTickets = tickets;
                 } else {
@@ -197,15 +209,19 @@ const ticketSlice = createSlice({
             .addMatcher(
                 (action) => [
                     addMessageToTicket.fulfilled.type, 
-                    claimTicket.fulfilled.type, 
+                    claimTicket.fulfilled.type, // Action incluse ici
                     markTicketAsRead.fulfilled.type, 
                     editMessage.fulfilled.type, 
                     deleteMessage.fulfilled.type,
                     reactToMessage.fulfilled.type
                 ].includes(action.type),
                 (state, action) => {
-                    const updatedTicket = action.payload;
-                    const updateList = (list) => list.map(t => t._id === updatedTicket._id ? updatedTicket : t);
+                    // ✅ MODIFICATION ICI : Gérer le payload qui peut être { ticket } ou juste un ticket
+                    const updatedTicket = action.payload.ticket || action.payload;
+                    
+                    const updateList = (list) => list.map(t => {
+                        return t._id === updatedTicket._id ? { ...t, ...updatedTicket } : t;
+                    });
                     state.adminTickets = updateList(state.adminTickets);
                     state.userTickets = updateList(state.userTickets);
                     state.archivedAdminTickets = updateList(state.archivedAdminTickets);
