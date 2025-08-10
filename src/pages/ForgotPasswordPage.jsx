@@ -105,6 +105,12 @@ function ForgotPasswordPage() {
             <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold' }}>
               Vérifiez vos emails
             </Typography>
+
+ {/* ✅ AJOUT : Le message pour les spams */}
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+              Pensez à vérifier votre dossier "Spam" si vous ne voyez pas l'email.
+            </Typography>
+
             <Typography variant="body1" sx={{ mt: 2, mb: 3 }} dangerouslySetInnerHTML={{ __html: `Si un compte est associé à l'adresse <strong>${email}</strong>, un lien de réinitialisation vient de vous être envoyé.` }} />
             <Button onClick={() => navigate('/login')} fullWidth variant="contained">
               Retour à la connexion

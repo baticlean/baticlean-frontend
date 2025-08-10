@@ -275,7 +275,7 @@ function ResponsiveServiceGrid({ services }) {
     }, [services]);
     const handleOpenBookingModal = (service) => { setSelectedService(service); setBookingModalOpen(true); };
     const handleCloseBookingModal = () => { setBookingModalOpen(false); setSelectedService(null); };
-    const handleBookingSubmit = (bookingData) => { toast.promise(dispatch(createBooking(bookingData)).unwrap(), { pending: 'Envoi de votre réservation...', success: 'Réservation envoyée ! Nous vous recontacterons.', error: 'Erreur lors de la réservation.' }) };
+    const handleBookingSubmit = (bookingData) => { toast.promise(dispatch(createBooking(bookingData)).unwrap(), { pending: 'Envoi de votre réservation...', success: 'Réservation envoyée ! Nous vous recontacterons. (Pensez à vérifier vos spams pour la confirmation).', error: 'Erreur lors de la réservation.' }) };
     return (
         <>
             {showScrollHint && (<motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, }}><Typography sx={{ bgcolor: 'black', color: 'yellow', p: 1, borderRadius: 1, textAlign: 'center', mb: 2 }}>Vous pouvez Scroller comme ça ➡ pour voir plus de cartes</Typography></motion.div>)}
