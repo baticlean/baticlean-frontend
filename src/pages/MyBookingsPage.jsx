@@ -1,5 +1,3 @@
-// src/pages/MyBookingsPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserBookings, cancelBooking, toggleHideBooking } from '../redux/bookingSlice.js';
@@ -13,6 +11,8 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StarIcon from '@mui/icons-material/Star';
 import { toast } from 'react-toastify';
+// ✅ AJOUTÉ : Pour lire les paramètres dans l'URL
+import { useSearchParams } from 'react-router-dom';
 import BookingTimeline from '../components/BookingTimeline.jsx';
 import CustomModal from '../components/CustomModal.jsx';
 import ReviewModal from '../components/ReviewModal.jsx';
@@ -24,10 +24,32 @@ function MyBookingsPage() {
     const [showHidden, setShowHidden] = useState(false);
     const [bookingToCancel, setBookingToCancel] = useState(null);
     const [bookingToReview, setBookingToReview] = useState(null);
+    
+    // ✅ AJOUTÉ : Pour gérer les paramètres de l'URL
+    const [searchParams, setSearchParams] = useSearchParams();
 
     useEffect(() => {
         dispatch(fetchUserBookings(showHidden));
     }, [dispatch, showHidden]);
+
+    // ✅ AJOUTÉ : Ce `useEffect` s'active quand les réservations sont chargées
+    // Il vérifie si un ID d'avis est présent dans l'URL.
+    useEffect(() => {
+        const reviewBookingId = searchParams.get('reviewBookingId');
+        
+        if (reviewBookingId && !loading && userBookings.length > 0) {
+            const bookingFromLink = userBookings.find(b => b._id === reviewBookingId);
+
+            // Si on trouve la réservation et qu'elle peut être évaluée, on ouvre le modal
+            if (bookingFromLink && bookingFromLink.status === 'Terminée' && !bookingFromLink.hasBeenReviewed) {
+                setBookingToReview(bookingFromLink);
+                // On nettoie l'URL pour ne pas ré-ouvrir le modal si l'utilisateur actualise
+                searchParams.delete('reviewBookingId');
+                setSearchParams(searchParams, { replace: true });
+            }
+        }
+    }, [userBookings, loading, searchParams, setSearchParams]);
+
 
     const handleConfirmCancel = () => {
         if (bookingToCancel) {
