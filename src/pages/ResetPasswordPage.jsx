@@ -16,10 +16,7 @@ function ResetPasswordPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    
-    // NOUVEAU : Un état pour gérer l'affichage de l'erreur sur la page
     const [errorState, setErrorState] = useState(false);
-
     const { token } = useParams();
     const navigate = useNavigate();
 
@@ -41,9 +38,7 @@ function ResetPasswordPage() {
             });
             setTimeout(() => navigate('/login'), 3000);
         } catch (error) {
-            toast.dismiss(toastId); // On ferme le toast de chargement
-            
-            // NOUVEAU : On active l'état d'erreur pour changer l'affichage
+            toast.dismiss(toastId);
             setErrorState(true); 
         }
     };
@@ -52,9 +47,7 @@ function ResetPasswordPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', p: 2 }}>
             <Paper elevation={6} sx={{ p: 4, borderRadius: '16px', textAlign: 'center', maxWidth: '500px' }}>
                 
-                {/* MODIFIÉ : On affiche soit le formulaire, soit le message d'erreur */}
                 {!errorState ? (
-                    // --- VUE NORMALE : Formulaire pour changer le mot de passe ---
                     <>
                         <PasswordIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
                         <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -82,13 +75,24 @@ function ResetPasswordPage() {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                             />
-                            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
+                            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 1 }}>
                                 Réinitialiser le mot de passe
+                            </Button>
+
+                            {/* ✅ AJOUTÉ : Le bouton Retour */}
+                            <Button
+                                type="button"
+                                fullWidth
+                                variant="outlined"
+                                startIcon={<ArrowBackIcon />}
+                                onClick={() => navigate('/forgot-password')}
+                                sx={{ mb: 2 }}
+                            >
+                                Retour
                             </Button>
                         </Box>
                     </>
                 ) : (
-                    // --- NOUVELLE VUE : Message d'erreur détaillé ---
                     <>
                         <ErrorOutlineIcon color="error" sx={{ fontSize: 60, mb: 2 }} />
                         <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold', color: 'error.main' }}>
@@ -106,9 +110,8 @@ function ResetPasswordPage() {
                                     <ListItemText primary="Ce lien a expiré (il n'est valide que pour une durée limitée)." />
                                 </ListItem>
                                 <ListItem>
-                                   
                                     <ListItemIcon sx={{minWidth: '30px'}}>3.</ListItemIcon>
-                                    <ListItemText primary="Le mot de passe ne respecte pas la forme acceptée de 9 caractères dont 3 chiffres et 1 caractère spécial comme @." />
+                                    <ListItemText primary="Le mot de passe ne respecte pas les critères requis." />
                                 </ListItem>
                             </List>
                         </Box>
