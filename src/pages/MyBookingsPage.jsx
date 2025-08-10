@@ -1,17 +1,19 @@
+// src/pages/MyBookingsPage.jsx (Version Finale)
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUserBookings, cancelBooking, toggleHideBooking } from '../redux/bookingSlice.js';
+// ✅ On importe la nouvelle action
+import { fetchUserBookings, cancelBooking, toggleHideBooking, markOneBookingAsRead } from '../redux/bookingSlice.js';
 import {
     Container, Typography, Box, CircularProgress, Alert,
     Accordion, AccordionSummary, AccordionDetails, Button, Chip,
-    Stack, FormControlLabel, Switch, IconButton, Tooltip
+    Stack, FormControlLabel, Switch, IconButton, Tooltip, Badge
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StarIcon from '@mui/icons-material/Star';
 import { toast } from 'react-toastify';
-// ✅ AJOUTÉ : Pour lire les paramètres dans l'URL
 import { useSearchParams } from 'react-router-dom';
 import BookingTimeline from '../components/BookingTimeline.jsx';
 import CustomModal from '../components/CustomModal.jsx';
@@ -24,43 +26,34 @@ function MyBookingsPage() {
     const [showHidden, setShowHidden] = useState(false);
     const [bookingToCancel, setBookingToCancel] = useState(null);
     const [bookingToReview, setBookingToReview] = useState(null);
-    
-    // ✅ AJOUTÉ : Pour gérer les paramètres de l'URL
     const [searchParams, setSearchParams] = useSearchParams();
+    
+    // ✅ NOUVEAU : État pour suivre les accordéons ouverts
+    const [expanded, setExpanded] = useState(false);
 
     useEffect(() => {
         dispatch(fetchUserBookings(showHidden));
     }, [dispatch, showHidden]);
 
-    // ✅ AJOUTÉ : Ce `useEffect` s'active quand les réservations sont chargées
-    // Il vérifie si un ID d'avis est présent dans l'URL.
     useEffect(() => {
         const reviewBookingId = searchParams.get('reviewBookingId');
-        
         if (reviewBookingId && !loading && userBookings.length > 0) {
             const bookingFromLink = userBookings.find(b => b._id === reviewBookingId);
-
-            // Si on trouve la réservation et qu'elle peut être évaluée, on ouvre le modal
             if (bookingFromLink && bookingFromLink.status === 'Terminée' && !bookingFromLink.hasBeenReviewed) {
                 setBookingToReview(bookingFromLink);
-                // On nettoie l'URL pour ne pas ré-ouvrir le modal si l'utilisateur actualise
                 searchParams.delete('reviewBookingId');
                 setSearchParams(searchParams, { replace: true });
             }
         }
     }, [userBookings, loading, searchParams, setSearchParams]);
 
-
     const handleConfirmCancel = () => {
         if (bookingToCancel) {
-            toast.promise(
-                dispatch(cancelBooking(bookingToCancel)).unwrap(),
-                {
-                    pending: 'Annulation en cours...',
-                    success: 'Réservation annulée.',
-                    error: 'Impossible d\'annuler cette réservation.'
-                }
-            );
+            toast.promise(dispatch(cancelBooking(bookingToCancel)).unwrap(), {
+                pending: 'Annulation en cours...',
+                success: 'Réservation annulée.',
+                error: 'Impossible d\'annuler cette réservation.'
+            });
             setBookingToCancel(null);
         }
     };
@@ -68,16 +61,26 @@ function MyBookingsPage() {
     const handleToggleHide = (e, bookingId) => {
         e.stopPropagation();
         const actionText = showHidden ? 'afficher' : 'masquer';
-        toast.promise(
-            dispatch(toggleHideBooking({ bookingId, hide: !showHidden })).unwrap(),
-            {
-                pending: 'Mise à jour...',
-                success: `Réservation ${showHidden ? 'affichée' : 'masquée'} !`,
-                error: `Erreur pour ${actionText} la réservation.`
-            }
-        );
+        toast.promise(dispatch(toggleHideBooking({ bookingId, hide: !showHidden })).unwrap(), {
+            pending: 'Mise à jour...',
+            success: `Réservation ${showHidden ? 'affichée' : 'masquée'} !`,
+            error: `Erreur pour ${actionText} la réservation.`
+        });
     };
-    
+
+    // ✅ NOUVELLE FONCTION : Gère l'ouverture/fermeture et marque comme lu
+    const handleAccordionChange = (panel) => (event, isExpanded) => {
+        setExpanded(isExpanded ? panel : false);
+        
+        // On cherche la réservation correspondante
+        const booking = bookingsToDisplay.find(b => b._id === panel);
+        
+        // Si elle est ouverte et non lue, on la marque comme lue
+        if (isExpanded && booking && !booking.isReadByUser) {
+            dispatch(markOneBookingAsRead(booking._id));
+        }
+    };
+
     const handleCloseReviewModal = (reviewSubmitted) => {
         setBookingToReview(null);
         if (reviewSubmitted) {
@@ -95,29 +98,40 @@ function MyBookingsPage() {
             <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                     <Typography variant="h4" gutterBottom>
-                        {showHidden ? 'Réservations Masquées' : 'Mes Réservations'}
+                        {showHidden ? 'Réservations Archivées' : 'Mes Réservations'}
                     </Typography>
                     <FormControlLabel
                         control={<Switch checked={showHidden} onChange={() => setShowHidden(!showHidden)} />}
-                        label="Voir les masquées"
+                        label="Voir les archives"
                     />
                 </Stack>
                 {bookingsToDisplay.length === 0 ? (
-                    <Typography>{showHidden ? 'Aucune réservation masquée.' : 'Vous n\'avez aucune réservation pour le moment.'}</Typography>
+                    <Typography>{showHidden ? 'Aucune réservation archivée.' : 'Vous n\'avez aucune réservation pour le moment.'}</Typography>
                 ) : (
                     bookingsToDisplay.map(booking => (
-                        <Accordion key={booking._id}>
+                        <Accordion 
+                            key={booking._id} 
+                            // ✅ MODIFIÉ : L'état d'ouverture est maintenant contrôlé
+                            expanded={expanded === booking._id} 
+                            onChange={handleAccordionChange(booking._id)}
+                        >
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', pr: 2 }}>
-                                    <Typography>
-                                        {booking.service.title} - {new Date(booking.bookingDate).toLocaleDateString()}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        {/* ✅ AFFICHAGE DU POINT VERT */}
+                                        {!booking.isReadByUser && !showHidden && (
+                                            <Badge color="success" variant="dot" />
+                                        )}
+                                        <Typography>
+                                            {booking.service.title} - {new Date(booking.bookingDate).toLocaleDateString()}
+                                        </Typography>
+                                    </Box>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <Chip 
                                             label={booking.status} 
                                             color={booking.status === 'Confirmée' ? 'success' : booking.status === 'Terminée' ? 'primary' : booking.status === 'Annulée' ? 'error' : 'info'} 
                                         />
-                                        <Tooltip title={showHidden ? "Afficher" : "Masquer"}>
+                                        <Tooltip title={showHidden ? "Restaurer" : "Archiver"}>
                                             <IconButton size="small" onClick={(e) => handleToggleHide(e, booking._id)}>
                                                 {showHidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
                                             </IconButton>

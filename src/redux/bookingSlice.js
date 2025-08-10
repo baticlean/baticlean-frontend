@@ -59,7 +59,6 @@ export const cancelBooking = createAsyncThunk('bookings/cancel', async (bookingI
     } catch (error) { return rejectWithValue(error.response?.data?.message); }
 });
 
-// REMPLACE deleteBooking
 export const hideBooking = createAsyncThunk('bookings/hide', async (bookingId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -69,7 +68,6 @@ export const hideBooking = createAsyncThunk('bookings/hide', async (bookingId, {
     } catch (error) { return rejectWithValue(error.response?.data?.message); }
 });
 
-// NOUVEAU : Pour restaurer une réservation
 export const unhideBooking = createAsyncThunk('bookings/unhide', async (bookingId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -88,13 +86,19 @@ export const fetchUnreadBookingCount = createAsyncThunk('bookings/fetchUnreadCou
     } catch (error) { return rejectWithValue(error.response?.data?.message); }
 });
 
-export const markUserBookingsAsRead = createAsyncThunk('bookings/markAsRead', async (_, { getState, rejectWithValue }) => {
+// ✅ NOUVELLE ACTION
+export const markOneBookingAsRead = createAsyncThunk('bookings/markOneAsRead', async (bookingId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        await axios.patch(`${API_URL}/api/bookings/mark-all-as-read`, null, config);
-    } catch (error) { return rejectWithValue(error.response?.data?.message); }
+        // On ne se soucie pas de la réponse, on veut juste que le backend fasse le travail
+        await axios.patch(`${API_URL}/api/bookings/${bookingId}/mark-as-read-by-user`, null, config);
+        return bookingId; // On retourne l'ID pour savoir quelle réservation mettre à jour dans le state
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message);
+    }
 });
+
 
 // --- SLICE ---
 
@@ -104,7 +108,7 @@ const bookingSlice = createSlice({
         userBookings: [],
         hiddenUserBookings: [],
         allBookings: [],
-        hiddenAdminBookings: [], // Ajouté pour le masquage admin
+        hiddenAdminBookings: [],
         loading: false,
         error: null,
         unreadCount: 0,
@@ -121,7 +125,7 @@ const bookingSlice = createSlice({
         addBooking: (state, action) => {
             state.allBookings.unshift(action.payload);
         },
-        removeBooking: (state, action) => { // Ceci est déclenché par socket si un admin supprime VRAIMENT
+        removeBooking: (state, action) => {
             state.allBookings = state.allBookings.filter(b => b._id !== action.payload._id);
             state.hiddenAdminBookings = state.hiddenAdminBookings.filter(b => b._id !== action.payload._id);
         },
@@ -131,9 +135,16 @@ const bookingSlice = createSlice({
     },
     extraReducers: (builder) => {
         const updateOneUserBooking = (state, action) => {
-            const index = state.userBookings.findIndex(b => b._id === action.payload._id);
+            const bookingId = action.payload._id || action.payload;
+            const list = state.userBookings.find(b => b._id === bookingId) ? state.userBookings : state.hiddenUserBookings;
+            const index = list.findIndex(b => b._id === bookingId);
             if (index !== -1) {
-                state.userBookings[index] = action.payload;
+                // Pour markOneBookingAsRead, on met juste à jour le champ `isReadByUser`
+                if (action.type === markOneBookingAsRead.fulfilled.type) {
+                    list[index].isReadByUser = true;
+                } else {
+                    list[index] = action.payload;
+                }
             }
         };
         builder
@@ -172,6 +183,9 @@ const bookingSlice = createSlice({
             })
             .addCase(cancelBooking.fulfilled, updateOneUserBooking)
             
+            // ✅ ACTION LORSQUE LA NOUVELLE ACTION RÉUSSIT
+            .addCase(markOneBookingAsRead.fulfilled, updateOneUserBooking)
+
             .addCase(hideBooking.fulfilled, (state, action) => {
                 const bookingId = action.payload;
                 const index = state.allBookings.findIndex(b => b._id === bookingId);
@@ -207,9 +221,6 @@ const bookingSlice = createSlice({
             })
             .addCase(fetchUnreadBookingCount.fulfilled, (state, action) => {
                 state.unreadCount = action.payload;
-            })
-            .addCase(markUserBookingsAsRead.fulfilled, (state) => {
-                state.unreadCount = 0;
             });
     },
 });
