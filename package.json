@@ -10,7 +10,7 @@
   },
 
   "overrides": {
-    "reselect": "4.1.8"
+    "reselect": "5.1.0"
      },
      
   "dependencies": {
