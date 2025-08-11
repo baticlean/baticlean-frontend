@@ -56,7 +56,7 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
           <InfoPoint 
             icon={<InfoOutlinedIcon color="action" />}
             primary="Éditeur" 
-            secondary="BATICleanNIC"
+            secondary="BATIClean Dev Team"
           />
           <InfoPoint 
             icon={<InfoOutlinedIcon color="action" />}
@@ -78,4 +78,4 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   );
 }
 
-export default UpdateNotification;
+export default UpdateNotification; 
