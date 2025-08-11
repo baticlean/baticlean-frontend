@@ -16,7 +16,13 @@ const InfoPoint = ({ icon, primary, secondary }) => (
     <ListItemIcon sx={{ minWidth: 36, color: 'primary.main' }}>
       {icon}
     </ListItemIcon>
-    <ListItemText primary={primary} secondary={secondary} />
+    <ListItemText 
+      primary={primary} 
+      secondary={secondary}
+      // ✅ Texte légèrement plus petit sur mobile
+      primaryTypographyProps={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+      secondaryTypographyProps={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}
+    />
   </ListItem>
 );
 
@@ -34,20 +40,20 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
       open={open}
       onClose={onClose}
       aria-labelledby="update-dialog-title"
-      PaperProps={{ sx: { borderRadius: { sm: 4 } } }}
+      PaperProps={{ sx: { borderRadius: { xs: 0, sm: 4 } } }} // Pas de bords arrondis en plein écran
     >
       <Box sx={{ p: 2, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
-        <RocketLaunchIcon sx={{ fontSize: 60, color: 'primary.main' }} />
-        <DialogTitle id="update-dialog-title" sx={{ p: 1, fontWeight: 'bold' }}>
+        {/* ✅ Icône plus petite sur mobile */}
+        <RocketLaunchIcon sx={{ fontSize: { xs: 48, sm: 60 }, color: 'primary.main' }} />
+        <DialogTitle id="update-dialog-title" sx={{ p: 1, fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
           Mise à Jour Disponible !
         </DialogTitle>
       </Box>
       <DialogContent dividers>
-        <Typography gutterBottom>
+        <Typography gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
           Une nouvelle version de l'application vient d'être déployée :
         </Typography>
         <List dense>
-          {/* ✅ ON AFFICHE LA VERSION "PROPRE" ICI */}
           <InfoPoint 
             icon={<NewReleasesIcon />}
             primary="Nouvelle version" 
@@ -65,11 +71,12 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
           />
         </List>
       </DialogContent>
-      <DialogActions sx={{ p: { xs: 2, sm: 3 }, justifyContent: 'space-between' }}>
+      {/* ✅ Boutons plus petits et empilés sur mobile si nécessaire */}
+      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, justifyContent: 'space-between' }}>
         <Button onClick={handleFeedbackClick} size="small">Donner un avis</Button>
         <Box>
-            <Button onClick={onClose}>Plus tard</Button>
-            <Button onClick={onConfirm} variant="contained" autoFocus>
+            <Button onClick={onClose} size="small">Plus tard</Button>
+            <Button onClick={onConfirm} variant="contained" autoFocus size="small">
               Actualiser
             </Button>
         </Box>
@@ -78,4 +85,4 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   );
 }
 
-export default UpdateNotification; 
+export default UpdateNotification;
