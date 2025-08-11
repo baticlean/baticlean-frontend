@@ -184,3 +184,39 @@ export const onNotificationCountsUpdated = (callback) => {
 export const offNotificationCountsUpdated = () => {
   if (socket) socket.off('notificationCountsUpdated');
 };
+
+// ✅ --- NOUVELLES FONCTIONS POUR LES AVERTISSEMENTS ---
+
+/**
+ * Émis par l'admin pour envoyer un avertissement à un utilisateur.
+ * @param {object} data - Doit contenir { userId, message }
+ */
+export const emitWarnUser = (data) => {
+  if (socket) {
+    socket.emit('admin:warn_user', data);
+  }
+};
+
+/**
+ * Écouté par le client pour recevoir un avertissement.
+ * @param {function} callback - La fonction à exécuter avec le message reçu.
+ */
+export const onUserWarning = (callback) => {
+    if (socket) {
+        socket.on('user:receive_warning', (data) => {
+            // On s'assure qu'on a bien un message avant de le passer
+            if (data && data.message) {
+                callback(data.message);
+            }
+        });
+    }
+};
+
+/**
+ * Nettoie l'écouteur d'avertissement.
+ */
+export const offUserWarning = () => {
+    if (socket) {
+        socket.off('user:receive_warning');
+    }
+};

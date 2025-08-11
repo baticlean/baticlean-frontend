@@ -1,21 +1,19 @@
-// src/pages/AdminUsersPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUsers, updateUser, notifyUserRestored } from '../redux/adminSlice.js';
+import { fetchUsers, updateUser, warnUser } from '../redux/adminSlice.js';
 import {
     Container, Typography, Box, Paper, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, TextField,
-    Stack, IconButton, Tooltip, useTheme, useMediaQuery // ✅ Ajouts pour le responsive
+    Stack, IconButton, Tooltip, useTheme, useMediaQuery
 } from '@mui/material';
-// ✅ On importe toutes les icônes dont nous avons besoin
 import { 
     Info, ArrowUpward, ArrowDownward, PauseCircleOutline, 
-    CheckCircleOutline, Gavel, Email 
+    CheckCircleOutline, Gavel, NotificationsActive as WarnIcon 
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { onNewUserRegistered, offNewUserRegistered } from '../socket/socket.js';
 import UserDetailsModal from '../components/UserDetailsModal.jsx';
+import WarningModal from '../components/WarningModal.jsx';
 
 function AdminUsersPage() {
     const dispatch = useDispatch();
@@ -23,12 +21,11 @@ function AdminUsersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-
-    // ✅ Hook pour détecter si on est sur un écran mobile
+    const [warningModalOpen, setWarningModalOpen] = useState(false);
+    const [userToWarn, setUserToWarn] = useState(null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    // ... (toute la logique des useEffect et des handlers reste inchangée)
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             dispatch(fetchUsers(searchTerm));
@@ -54,14 +51,6 @@ function AdminUsersPage() {
         });
     };
     
-    const handleNotify = (userId) => {
-        toast.promise(dispatch(notifyUserRestored(userId)).unwrap(), {
-            pending: 'Envoi de la notification...',
-            success: 'Notification envoyée !',
-            error: 'Erreur lors de l\'envoi.'
-        });
-    };
-
     const handleOpenModal = (user) => {
         setSelectedUser(user);
         setModalOpen(true);
@@ -72,6 +61,25 @@ function AdminUsersPage() {
         setSelectedUser(null);
     };
 
+    const handleOpenWarningModal = (user) => {
+        setUserToWarn(user);
+        setWarningModalOpen(true);
+    };
+
+    const handleSendWarning = (message) => {
+        if (!userToWarn) return;
+        
+        toast.promise(
+            dispatch(warnUser({ userId: userToWarn._id, message })).unwrap(),
+            {
+                pending: 'Envoi de l\'avertissement...',
+                success: 'Avertissement envoyé !',
+                error: 'Erreur lors de l\'envoi.'
+            }
+        );
+        setWarningModalOpen(false);
+        setUserToWarn(null);
+    };
 
     const validUsers = Array.isArray(users) ? users.filter(Boolean) : [];
 
@@ -121,7 +129,6 @@ function AdminUsersPage() {
                                     <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{user.role ?? 'Inconnu'}</TableCell>
                                     <TableCell>{user.status ?? 'Inconnu'}</TableCell>
                                     <TableCell align="right">
-                                        {/* ✅ Les boutons utilisent maintenant des icônes sur mobile */}
                                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                             <Tooltip title="Infos"><IconButton size="small" color="info" onClick={() => handleOpenModal(user)}><Info /></IconButton></Tooltip>
                                             
@@ -136,7 +143,7 @@ function AdminUsersPage() {
                                                 <Tooltip title="Activer"><IconButton size="small" color="success" onClick={() => handleUpdate(user._id, { status: 'active' })}><CheckCircleOutline /></IconButton></Tooltip>
                                             )}
                                             <Tooltip title="Bannir"><IconButton size="small" color="error" onClick={() => handleUpdate(user._id, { status: 'banned' })}><Gavel /></IconButton></Tooltip>
-                                            <Tooltip title="Notifier"><IconButton size="small" color="info" onClick={() => handleNotify(user._id)}><Email /></IconButton></Tooltip>
+                                            <Tooltip title="Avertir"><IconButton size="small" sx={{color: 'orange'}} onClick={() => handleOpenWarningModal(user)}><WarnIcon /></IconButton></Tooltip>
                                         </Box>
                                     </TableCell>
                                 </TableRow>
@@ -150,6 +157,11 @@ function AdminUsersPage() {
                 open={modalOpen}
                 onClose={handleCloseModal}
                 user={selectedUser}
+            />
+            <WarningModal 
+                open={warningModalOpen} 
+                onClose={() => setWarningModalOpen(false)}
+                onSubmit={handleSendWarning}
             />
         </>
     );
