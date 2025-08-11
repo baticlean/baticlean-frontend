@@ -73,7 +73,7 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
       </DialogContent>
       {/* ✅ Boutons plus petits et empilés sur mobile si nécessaire */}
       <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, justifyContent: 'space-between' }}>
-        <Button onClick={handleFeedbackClick} size="small">Donner un avis</Button>
+        <Button onClick={handleFeedbackClick} size="small">Commenter la version actuelle</Button>
         <Box>
             <Button onClick={onClose} size="small">Plus tard</Button>
             <Button onClick={onConfirm} variant="contained" autoFocus size="small">
