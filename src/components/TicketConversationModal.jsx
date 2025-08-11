@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-// ✅ On importe fetchTicketById pour s'assurer d'avoir toujours les données complètes
 import { addMessageToTicket, editMessage, deleteMessage, reactToMessage, fetchTicketById } from '../redux/ticketSlice.js';
 import { Modal, Box, Typography, TextField, Button, List, ListItem, ListItemText, CircularProgress, Paper, IconButton, Link, Menu, MenuItem, Popover, Chip, Avatar, Divider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -36,7 +35,6 @@ const useLongPress = (callback = () => {}, ms = 1000) => {
     };
 };
 
-// --- Le composant MessageItem reste INCHANGÉ ---
 function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onReact }) {
     const dispatch = useDispatch();
     const isMe = msg.sender?._id === currentUser._id;
@@ -48,7 +46,7 @@ function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onRe
     const handleEditClick = () => { onEdit(msg); handleCloseMenu(); };
     const handleDeleteClick = () => { onDelete(msg); handleCloseMenu(); };
     const longPressProps = useLongPress(() => handleMenuClick({ currentTarget: document.getElementById(`msg-paper-${msg._id}`) }), 1000);
-    const otherParticipantId = isMe ? (isAdmin ? ticket.user._id : ticket.assignedAdmin?._id) : null;
+    const otherParticipantId = isMe ? (isAdmin ? ticket.user?._id : ticket.assignedAdmin?._id) : null;
     const isRead = otherParticipantId ? msg.readBy?.includes(otherParticipantId) : false;
     const isVoiceMessage = msg.attachments?.length > 0 && msg.attachments.some(file => file.fileType.startsWith('audio/'));
     let bgColor;
@@ -110,11 +108,10 @@ const roleStyles = {
 function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
-    
-    // ✅ CORRECTION : On utilise `selectedTicket` du slice et `loading` pour un affichage fiable
+    // ✅ ON UTILISE LE NOUVEL ÉTAT DU SLICE, C'EST PLUS FIABLE
     const { selectedTicket: ticket, loading, error } = useSelector((state) => state.tickets);
     
-    // ✅ On lance la récupération du ticket complet à chaque ouverture de la modale
+    // ✅ ON S'ASSURE DE TOUJOURS ALLER CHERCHER LA VERSION COMPLÈTE DU TICKET
     useEffect(() => {
         if (open && ticketId) {
             dispatch(fetchTicketById(ticketId));
@@ -130,7 +127,7 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const messagesEndRef = useRef(null);
     const { isRecording, startRecording, stopRecording, audioBlob, resetAudio } = useAudioRecorder();
     
-    // ✅ On sécurise la récupération des interlocuteurs
+    // ✅ ON SÉCURISE LA RÉCUPÉRATION DES INTERLOCUTEURS
     const ticketUser = ticket?.user;
     const assignedAdmin = ticket?.assignedAdmin;
     const otherParticipant = isAdmin ? 
@@ -197,7 +194,6 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
                     <IconButton onClick={onClose}><CloseIcon /></IconButton>
                 </Box>
                 
-                {/* On vérifie que les données existent avant de rendre l'en-tête */}
                 {otherParticipant && ticket && (
                     <Box>
                         <Box sx={{ px: 1, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -214,8 +210,7 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
                 )}
 
                 <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1, mt: 1 }}>
-                    {/* On utilise la variable `loading` du slice pour afficher un spinner */}
-                    {loading ? (
+                    {loading && !ticket?.messages ? (
                         <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
                             <CircularProgress />
                         </Box>
