@@ -16,7 +16,7 @@ function LoginTransition() {
         // On définit un minuteur pour rediriger après 5 secondes (5000 millisecondes)
         const timer = setTimeout(() => {
             navigate('/home', { replace: true }); // Redirige vers la page d'accueil
-        }, 5000);
+        }, 3000);
 
         // On nettoie le minuteur si le composant est "démonté" avant la fin
         return () => clearTimeout(timer);
