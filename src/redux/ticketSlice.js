@@ -245,4 +245,4 @@ const ticketSlice = createSlice({
 });
 
 export const { addAdminTicket, removeAdminTicket, updateTicket, processTicketArchive } = ticketSlice.actions;
-export default ticketSlice.reducer; 
+export default ticketSlice.reducer;
