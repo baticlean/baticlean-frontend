@@ -1,13 +1,35 @@
 // src/components/UpdateNotification.jsx
 
 import React from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, useMediaQuery, Box } from '@mui/material';
+import {
+  Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  useMediaQuery, Box, Typography, List, ListItem, ListItemIcon, ListItemText, Divider
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import UpdateIcon from '@mui/icons-material/SystemUpdateAlt';
+import { toast } from 'react-toastify';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
-function UpdateNotification({ open, onClose, onConfirm }) {
+// Un petit composant pour afficher une information dans la liste
+const InfoPoint = ({ primary, secondary }) => (
+  <ListItem sx={{ py: 0.5 }}>
+    <ListItemIcon sx={{ minWidth: 32 }}>
+      <CheckCircleOutlineIcon fontSize="small" color="primary" />
+    </ListItemIcon>
+    <ListItemText primary={primary} secondary={secondary} />
+  </ListItem>
+);
+
+function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm')); // Responsive pour les petits écrans
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // S'assure que versionInfo existe avant de l'utiliser
+  if (!versionInfo?.available) return null;
+  
+  const handleFeedbackClick = () => {
+    toast.info("Cette fonctionnalité est en cours de développement.");
+  };
 
   return (
     <Dialog
@@ -15,24 +37,50 @@ function UpdateNotification({ open, onClose, onConfirm }) {
       open={open}
       onClose={onClose}
       aria-labelledby="update-dialog-title"
+      PaperProps={{ sx: { borderRadius: { sm: 4 } } }} // Bords arrondis sur grand écran
     >
-      <DialogTitle id="update-dialog-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <UpdateIcon color="primary" />
-        Mise à Jour Disponible
-      </DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Une nouvelle version de l'application est prête ! Pour garantir une expérience optimale et éviter les bugs, nous vous recommandons de recharger la page.
-        </DialogContentText>
-        <DialogContentText sx={{ mt: 2, fontSize: '0.8rem', fontStyle: 'italic' }}>
-          (Vous pourrez toujours actualiser plus tard si vous fermez cette fenêtre).
-        </DialogContentText>
+      <Box sx={{ p: 2, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
+        <RocketLaunchIcon sx={{ fontSize: 60, color: 'primary.main' }} />
+        <DialogTitle id="update-dialog-title" sx={{ p: 1, fontWeight: 'bold' }}>
+          Nouvelle Version Déployée !
+        </DialogTitle>
+      </Box>
+      <DialogContent dividers>
+        <Typography gutterBottom>
+          Découvrez les nouveautés et améliorations :
+        </Typography>
+        <List dense>
+          <InfoPoint 
+            primary="Nouvelle version" 
+            secondary={versionInfo.newVersion} 
+          />
+          <InfoPoint 
+            primary="Date de la mise à jour" 
+            secondary={new Date(versionInfo.timestamp).toLocaleString('fr-FR')} 
+          />
+          <InfoPoint 
+            primary="Auteur" 
+            secondary="BATICleanNIC" 
+          />
+          <InfoPoint 
+            primary="Stabilité" 
+            secondary="Amélioration des performances générales." 
+          />
+           <InfoPoint 
+            primary="Correctifs" 
+            secondary="Résolution de bugs mineurs et optimisation du cache." 
+          />
+        </List>
       </DialogContent>
-      <DialogActions sx={{ p: { xs: 2, sm: 3 } }}>
-        <Button onClick={onClose}>Plus tard</Button>
-        <Button onClick={onConfirm} variant="contained" autoFocus>
-          Actualiser Maintenant
-        </Button>
+      <Divider />
+      <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+        <Button onClick={handleFeedbackClick} size="small">Laisser un avis</Button>
+        <Box>
+            <Button onClick={onClose}>Plus tard</Button>
+            <Button onClick={onConfirm} variant="contained" autoFocus>
+              Actualiser
+            </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );
