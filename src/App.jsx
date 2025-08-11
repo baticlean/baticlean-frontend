@@ -1,14 +1,19 @@
 // src/App.jsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// ✅ --- IMPORTS POUR LA NOTIFICATION DE MISE À JOUR ---
+import { useVersionCheck } from './hooks/useVersionCheck';
+import UpdateNotification from './components/UpdateNotification';
+// --- FIN DES IMPORTS ---
 
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
 import LoginTransition from './components/LoginTransition.jsx';
-
-// NOUVEAU : On importe la bannière de cookies
 import CookieConsent from './components/CookieConsent.jsx';
 
 import MainLayout from './layout/MainLayout.jsx';
@@ -33,9 +38,6 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
-
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 const router = createBrowserRouter([
   {
@@ -69,7 +71,7 @@ const router = createBrowserRouter([
               { path: "my-bookings", element: <MyBookingsPage /> },
               { path: "my-tickets", element: <UserTicketsPage /> },
               { path: "support-chat", element: <SupportChatPage /> },
-               { path: "admin/dashboard", element: <AdminDashboardPage /> },
+              { path: "admin/dashboard", element: <AdminDashboardPage /> },
               { path: "admin/users", element: <AdminUsersPage /> },
               { path: "admin/services", element: <AdminServicesPage /> },
               { path: "admin/tickets", element: <AdminTicketsPage /> },
@@ -84,7 +86,23 @@ const router = createBrowserRouter([
   },
 ]);
 
-function App() {
+// ✅ --- COMPOSANT POUR GÉRER LA NOTIFICATION ---
+function AppWithVersionCheck() {
+  const newVersionAvailable = useVersionCheck();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (newVersionAvailable) {
+      setModalOpen(true);
+    }
+  }, [newVersionAvailable]);
+
+  const handleUpdate = () => {
+    // Forcer un rechargement complet de la page, ce qui vide le cache.
+    // C'est l'équivalent d'un Ctrl+F5 et ça fonctionne sur mobile.
+    window.location.reload(true);
+  };
+
   return (
     <>
       <RouterProvider router={router} />
@@ -100,10 +118,19 @@ function App() {
         pauseOnHover
         theme="colored"
       />
-      {/* NOUVEAU : On ajoute la bannière de cookies ici pour qu'elle soit visible partout */}
       <CookieConsent />
+      <UpdateNotification
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleUpdate}
+      />
     </>
   );
+}
+
+// On exporte le composant principal qui inclut maintenant la vérification
+function App() {
+  return <AppWithVersionCheck />;
 }
 
 export default App;
