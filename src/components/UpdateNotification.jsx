@@ -6,7 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { toast } from 'react-toastify';
 
-function UpdateNotification({ open, onClose, onConfirm }) {
+function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -31,6 +31,7 @@ function UpdateNotification({ open, onClose, onConfirm }) {
       <DialogContent sx={{pt: 2}}>
         <DialogContentText>
             Une nouvelle version de l'application vient d'être déployée avec des améliorations et des correctifs.
+            {/* On pourrait afficher la nouvelle version ici si on voulait : versionInfo.version */}
         </DialogContentText>
         <DialogContentText sx={{ mt: 2, fontWeight: 500}}>
             Pour en bénéficier, veuillez actualiser l'application.

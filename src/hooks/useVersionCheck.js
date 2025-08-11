@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 const POLLING_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 export function useVersionCheck() {
-  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
+  // L'état contiendra un objet avec la disponibilité et la nouvelle version
+  const [versionInfo, setVersionInfo] = useState({ available: false, version: null });
 
   useEffect(() => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
@@ -22,7 +23,7 @@ export function useVersionCheck() {
         .then(res => res.json())
         .then(meta => {
           if (meta.version !== currentVersion) {
-            setNewVersionAvailable(true);
+            setVersionInfo({ available: true, version: meta.version });
             clearInterval(interval); 
           }
         })
@@ -32,5 +33,5 @@ export function useVersionCheck() {
     return () => clearInterval(interval);
   }, []);
 
-  return newVersionAvailable;
+  return versionInfo;
 }
