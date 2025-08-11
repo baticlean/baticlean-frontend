@@ -265,4 +265,4 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     );
 }
 
-export default TicketConversationModal;
+export default TicketConversationModal; 
