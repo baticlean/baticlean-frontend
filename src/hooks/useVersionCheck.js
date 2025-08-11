@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react';
 const POLLING_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 export function useVersionCheck() {
-  // L'état contiendra un objet avec la disponibilité et la nouvelle version
-  const [versionInfo, setVersionInfo] = useState({ available: false, version: null });
+  const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
 
   useEffect(() => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
@@ -22,8 +21,10 @@ export function useVersionCheck() {
       fetch(url, { cache: 'no-store' })
         .then(res => res.json())
         .then(meta => {
-          if (meta.version !== currentVersion) {
-            setVersionInfo({ available: true, version: meta.version });
+          // ✅ La logique de détection utilise toujours la version complète et robuste
+          if (meta.fullVersion !== currentVersion) {
+            // ✅ Mais on ne stocke que la version destinée à l'affichage
+            setVersionInfo({ available: true, displayVersion: meta.displayVersion });
             clearInterval(interval); 
           }
         })

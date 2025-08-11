@@ -9,9 +9,8 @@ import { useTheme } from '@mui/material/styles';
 import { toast } from 'react-toastify';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import NewReleasesIcon from '@mui/icons-material/NewReleases'; // Une icône pour la version
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
 
-// Petit composant pour afficher une ligne d'information
 const InfoPoint = ({ icon, primary, secondary }) => (
   <ListItem sx={{ py: 0.5 }}>
     <ListItemIcon sx={{ minWidth: 36, color: 'primary.main' }}>
@@ -48,11 +47,11 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
           Une nouvelle version de l'application vient d'être déployée :
         </Typography>
         <List dense>
-          {/* ✅ ON AFFICHE LA VERSION ICI */}
+          {/* ✅ ON AFFICHE LA VERSION "PROPRE" ICI */}
           <InfoPoint 
             icon={<NewReleasesIcon />}
             primary="Nouvelle version" 
-            secondary={versionInfo.version || 'Chargement...'} 
+            secondary={versionInfo.displayVersion || 'Chargement...'} 
           />
           <InfoPoint 
             icon={<InfoOutlinedIcon color="action" />}
