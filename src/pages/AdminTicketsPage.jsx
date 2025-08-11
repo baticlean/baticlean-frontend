@@ -1,20 +1,23 @@
-// src/pages/AdminTicketsPage.jsx (Mis à jour)
-
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchAllTickets, claimTicket, markTicketAsRead, archiveTicket } from '../redux/ticketSlice.js';
-import { Box, Typography, Paper, Button, CircularProgress, Alert, Switch, FormControlLabel, Stack } from '@mui/material';
+import { Box, Typography, Paper, Button, CircularProgress, Alert, Switch, FormControlLabel, Stack, Tooltip } from '@mui/material';
 import { toast } from 'react-toastify';
 import TicketConversationModal from '../components/TicketConversationModal.jsx';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
-import HandymanIcon from '@mui/icons-material/Handyman'; // Pour "Prendre la main"
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer'; // Pour "Prendre en charge"
-import VisibilityIcon from '@mui/icons-material/Visibility'; // Pour "Consulter"
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'; // Pour "Marquer comme lu"
+import HandymanIcon from '@mui/icons-material/Handyman';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import LockIcon from '@mui/icons-material/Lock'; // Icône pour un ticket verrouillé
 
-
-const UnreadIcon = () => <>⛔</>;
+const UnreadIcon = () => (
+    <Tooltip title="Non lu">
+        <Box component="span" sx={{ color: 'primary.main', fontSize: '1.5rem', lineHeight: 1 }}>
+            ●
+        </Box>
+    </Tooltip>
+);
 
 function AdminTicketsPage() {
     const dispatch = useDispatch();
@@ -26,25 +29,22 @@ function AdminTicketsPage() {
     const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
-        dispatch(fetchAllTickets(showArchived));
-    }, [dispatch, showArchived]);
+        if (currentUser) { // S'assurer que currentUser est chargé avant de fetch
+            dispatch(fetchAllTickets(showArchived));
+        }
+    }, [dispatch, showArchived, currentUser]);
 
-    // ✅ MODIFICATION ICI : Gérer les différents messages de succès/erreur
     const handleClaim = (ticketId) => {
         dispatch(claimTicket(ticketId))
             .unwrap()
             .then((result) => {
-                // `result` est la valeur retournée par le thunk : { ticket, overrideMessage }
                 if (result.overrideMessage) {
-                    // Message d'information pour le super admin qui prend la main
                     toast.info(result.overrideMessage);
                 } else {
-                    // Message de succès standard
                     toast.success('Vous avez pris le ticket en charge !');
                 }
             })
             .catch((errorMessage) => {
-                // Affiche le message d'erreur du backend ("Déjà pris en charge par...")
                 toast.error(errorMessage);
             });
     };
@@ -61,7 +61,18 @@ function AdminTicketsPage() {
         );
     };
 
+    // ✅ MODIFICATION PRINCIPALE ICI
     const handleOpenModal = (ticket) => {
+        const isAssignedToOther = ticket.assignedAdmin && ticket.assignedAdmin._id !== currentUser._id;
+        const isSuperAdmin = currentUser.role === 'superAdmin';
+
+        // Si le ticket est assigné à un autre et que l'utilisateur n'est pas superAdmin, on bloque.
+        if (isAssignedToOther && !isSuperAdmin) {
+            toast.warn(`Ce ticket est déjà pris en charge par ${ticket.assignedAdmin.username}.`);
+            return; // On arrête l'exécution ici.
+        }
+
+        // Si la vérification passe, on continue comme avant.
         setSelectedTicketId(ticket._id);
         setIsModalOpen(true);
         const isUnreadForCurrentAdmin = !ticket.readByAdmins.includes(currentUser?._id);
@@ -95,11 +106,17 @@ function AdminTicketsPage() {
             {ticketsToDisplay.map((ticket) => {
                 const isUnreadForCurrentAdmin = !ticket.readByAdmins.includes(currentUser?._id);
                 
-                // ✅ MODIFICATION ICI : Logique des boutons plus claire
-                const isAssignedToOther = ticket.assignedAdmin && ticket.assignedAdmin._id !== currentUser._id;
+                // Logique pour déterminer l'état et les permissions du ticket
+                const isAssignedToMe = ticket.assignedAdmin && ticket.assignedAdmin._id === currentUser._id;
+                const isAssignedToOther = ticket.assignedAdmin && !isAssignedToMe;
+                const isUnassigned = !ticket.assignedAdmin;
+
                 const canTakeOver = isAssignedToOther && currentUser.role === 'superAdmin' && !showArchived;
-                const canClaim = !ticket.assignedAdmin && !showArchived;
+                const canClaim = isUnassigned && !showArchived;
                 
+                // ✅ Le ticket est "verrouillé" pour un admin standard s'il est pris par un autre
+                const isLockedForCurrentUser = isAssignedToOther && currentUser.role !== 'superAdmin';
+
                 return (
                     <Paper 
                         key={ticket._id} 
@@ -110,8 +127,9 @@ function AdminTicketsPage() {
                             display: 'flex', 
                             justifyContent: 'space-between', 
                             alignItems: 'center',
-                            border: isUnreadForCurrentAdmin && !showArchived ? '2px solid #007BFF' : '1px solid #ddd',
-                            boxShadow: isUnreadForCurrentAdmin && !showArchived ? '0 0 10px rgba(0, 123, 255, 0.5)' : 'none'
+                            opacity: isLockedForCurrentUser ? 0.6 : 1, // Opacité réduite si verrouillé
+                            borderLeft: isAssignedToMe ? '4px solid #4caf50' : (isAssignedToOther ? '4px solid #ff9800' : '4px solid transparent'),
+                            transition: 'opacity 0.3s, border-left 0.3s',
                         }}
                     >
                         <Box>
@@ -120,15 +138,15 @@ function AdminTicketsPage() {
                                 Sujet: {ticket.messages[0]?.text.substring(0, 50)}... - Statut: {ticket.status}
                             </Typography>
                             {ticket.assignedAdmin && (
-                                <Typography component="div" variant="body2" sx={{ mt: 1, color: ticket.assignedAdmin._id === currentUser._id ? 'success.main' : 'primary.main', fontWeight: 'bold' }}>
-                                    Pris en charge par: {ticket.assignedAdmin._id === currentUser._id ? 'vous' : ticket.assignedAdmin.username}
+                                <Typography component="div" variant="body2" sx={{ mt: 1, color: isAssignedToMe ? 'success.main' : 'warning.main', fontWeight: 'bold' }}>
+                                    Pris en charge par: {isAssignedToMe ? 'vous' : ticket.assignedAdmin.username}
                                 </Typography>
                             )}
                         </Box>
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                             {isUnreadForCurrentAdmin && !showArchived && <UnreadIcon />}
                             
-                            {/* Bouton Archiver/Désarchiver */}
+                            {/* Bouton Archiver/Désarchiver (toujours visible) */}
                             <Button
                                 variant="outlined"
                                 color="secondary"
@@ -138,14 +156,14 @@ function AdminTicketsPage() {
                                 {showArchived ? 'Sortir' : 'Archiver'}
                             </Button>
 
-                            {/* Bouton "Prendre en charge" */}
+                            {/* Bouton "Prendre en charge" (si non assigné) */}
                             {canClaim && (
                                 <Button variant="contained" color="primary" startIcon={<QuestionAnswerIcon />} onClick={() => handleClaim(ticket._id)}>
                                     Prendre en charge
                                 </Button>
                             )}
 
-                             {/* Bouton "Prendre la main" pour Super Admin */}
+                             {/* Bouton "Prendre la main" pour Super Admin (si déjà assigné à un autre) */}
                             {canTakeOver && (
                                 <Button variant="contained" color="warning" startIcon={<HandymanIcon />} onClick={() => handleClaim(ticket._id)}>
                                     Prendre la main
@@ -157,9 +175,11 @@ function AdminTicketsPage() {
                                 variant="contained" 
                                 color={isUnreadForCurrentAdmin ? "primary" : "secondary"}
                                 onClick={() => handleOpenModal(ticket)}
-                                startIcon={<VisibilityIcon />}
+                                startIcon={isLockedForCurrentUser ? <LockIcon /> : <VisibilityIcon />}
+                                // Le bouton est désactivé visuellement et fonctionnellement si le ticket est verrouillé
+                                disabled={isLockedForCurrentUser && currentUser.role !== 'superAdmin'}
                             >
-                                {isUnreadForCurrentAdmin ? "Voir la réponse" : "Consulter"}
+                                {isAssignedToMe ? "Traiter" : "Consulter"}
                             </Button>
                         </Box>
                     </Paper>
