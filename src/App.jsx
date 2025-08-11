@@ -5,7 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// ✅ --- IMPORTS POUR LA NOTIFICATION DE MISE À JOUR ---
+// --- IMPORTS POUR LA NOTIFICATION DE MISE À JOUR ---
 import { useVersionCheck } from './hooks/useVersionCheck';
 import UpdateNotification from './components/UpdateNotification';
 // --- FIN DES IMPORTS ---
@@ -86,20 +86,20 @@ const router = createBrowserRouter([
   },
 ]);
 
-// ✅ --- COMPOSANT POUR GÉRER LA NOTIFICATION ---
+// ✅ --- COMPOSANT MIS À JOUR POUR GÉRER LA NOTIFICATION ---
 function AppWithVersionCheck() {
-  const newVersionAvailable = useVersionCheck();
+  // Le hook renvoie maintenant un objet complet
+  const versionInfo = useVersionCheck();
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    if (newVersionAvailable) {
+    // On ouvre la modale si le hook nous dit qu'une version est disponible
+    if (versionInfo.available) {
       setModalOpen(true);
     }
-  }, [newVersionAvailable]);
+  }, [versionInfo]);
 
   const handleUpdate = () => {
-    // Forcer un rechargement complet de la page, ce qui vide le cache.
-    // C'est l'équivalent d'un Ctrl+F5 et ça fonctionne sur mobile.
     window.location.reload(true);
   };
 
@@ -119,16 +119,18 @@ function AppWithVersionCheck() {
         theme="colored"
       />
       <CookieConsent />
+      
+      {/* On passe l'objet versionInfo complet à la modale */}
       <UpdateNotification
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleUpdate}
+        versionInfo={versionInfo}
       />
     </>
   );
 }
 
-// On exporte le composant principal qui inclut maintenant la vérification
 function App() {
   return <AppWithVersionCheck />;
 }

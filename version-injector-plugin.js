@@ -1,36 +1,54 @@
-// version-injector-plugin.js
+// vite-plugin-version-injector.js
 
 import fs from 'fs';
 import path from 'path';
 
 export default function versionInjector() {
-  // On génère la version une seule fois au début du build
-  const buildVersion = new Date().toISOString();
+  // Lit la version actuelle depuis le fichier racine
+  const versionPath = path.resolve(process.cwd(), 'version.json');
+  const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf-8'));
+  const currentVersion = versionData.version;
+
+  // Logique d'incrémentation
+  const parts = currentVersion.split('.').map(Number);
+  let i = parts.length - 1;
+  while (i >= 0) {
+    parts[i]++;
+    if (parts[i] < 10) break;
+    if (i > 0) {
+      parts[i] = 0;
+      i--;
+    }
+  }
+  const newVersion = parts.join('.');
+
+  const updateTimestamp = new Date().toISOString();
 
   return {
-    // Nom du plugin (utile pour le débogage)
     name: 'version-injector',
-    
-    // Ce hook est appelé par Vite pour transformer le fichier index.html final
+
     transformIndexHtml(html) {
-      const metaTag = `<meta name="app-version" content="${buildVersion}">`;
-      // On injecte la balise de manière sûre
+      const metaTag = `<meta name="app-version" content="${newVersion}">`;
       return html.replace('</head>', `  ${metaTag}\n</head>`);
     },
-    
-    // Ce hook est appelé par Vite juste avant de finaliser le build
+
     closeBundle() {
-      // On s'assure que le dossier 'dist' existe
-      const distPath = path.resolve(__dirname, 'dist');
-      if (!fs.existsSync(distPath)) {
-        fs.mkdirSync(distPath);
-      }
-      
-      // On écrit le fichier meta.json
-      const meta = { version: buildVersion };
+      const distPath = path.resolve(process.cwd(), 'dist');
+      if (!fs.existsSync(distPath)) fs.mkdirSync(distPath);
+
+      // Le fichier meta.json contient maintenant toutes les infos
+      const meta = { 
+        oldVersion: currentVersion,
+        newVersion: newVersion, 
+        timestamp: updateTimestamp 
+      };
       fs.writeFileSync(path.join(distPath, 'meta.json'), JSON.stringify(meta));
-      
-      console.log(`\nVersion injectée : ${buildVersion}`);
+
+      // On met à jour le fichier version.json pour le prochain build
+      fs.writeFileSync(versionPath, JSON.stringify({ version: newVersion }, null, 2));
+
+      console.log(`\nVersion précédente: ${currentVersion}`);
+      console.log(`Nouvelle version injectée: ${newVersion}`);
     }
   };
 }

@@ -2,40 +2,37 @@
 
 import { useState, useEffect } from 'react';
 
-const POLLING_INTERVAL = 2 * 60 * 1000; // 5 minutes
+const POLLING_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 export function useVersionCheck() {
-  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
+  // L'état contient maintenant un objet avec toutes les infos, ou null
+  const [versionInfo, setVersionInfo] = useState({ available: false });
 
   useEffect(() => {
-    // 1. Récupérer la version actuelle de l'app depuis la balise meta
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
     
     if (!currentVersion) {
-      console.warn("La balise meta 'app-version' n'a pas été trouvée.");
+      console.warn("La balise meta 'app-version' est introuvable.");
       return;
     }
 
-    // 2. Mettre en place une vérification périodique
     const interval = setInterval(() => {
-      // On utilise 'no-store' pour être sûr de ne pas récupérer une version en cache
-      fetch('/meta.json', { cache: 'no-store' })
+      const url = `/meta.json?t=${new Date().getTime()}`;
+
+      fetch(url, { cache: 'no-store' })
         .then(res => res.json())
         .then(meta => {
-          if (meta.version !== currentVersion) {
-            setNewVersionAvailable(true);
-            // On arrête de vérifier une fois qu'on a trouvé une nouvelle version
+          // On compare la version du serveur avec celle de l'app
+          if (meta.newVersion !== currentVersion) {
+            setVersionInfo({ available: true, ...meta });
             clearInterval(interval); 
           }
         })
-        .catch(err => {
-          console.error("Erreur lors de la vérification de la version :", err);
-        });
+        .catch(err => console.error("Erreur lors de la vérification de la version :", err));
     }, POLLING_INTERVAL);
 
-    // 3. Nettoyer l'intervalle quand le composant est démonté
     return () => clearInterval(interval);
   }, []);
 
-  return newVersionAvailable;
+  return versionInfo;
 }
