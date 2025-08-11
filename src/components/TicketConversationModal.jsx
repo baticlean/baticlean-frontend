@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessageToTicket, editMessage, deleteMessage, reactToMessage } from '../redux/ticketSlice.js';
-// ✅ Ajout de Avatar et Divider
 import { Modal, Box, Typography, TextField, Button, List, ListItem, ListItemText, CircularProgress, Paper, IconButton, Link, Menu, MenuItem, Popover, Chip, Avatar, Divider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
@@ -113,7 +112,6 @@ function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onRe
     );
 }
 
-// ✅ On ajoute l'objet de style pour les badges de rôle
 const roleStyles = {
     superAdmin: { color: 'error', variant: 'filled' },
     admin: { color: 'warning', variant: 'outlined' },
@@ -123,7 +121,12 @@ const roleStyles = {
 function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
-    const ticket = useSelector((state) => (isAdmin ? [...state.tickets.adminTickets, ...state.tickets.archivedAdminTickets] : [...state.tickets.userTickets, ...state.tickets.archivedUserTickets]).find(t => t._id === ticketId));
+    
+    // ✅ CORRECTION APPLIQUÉE ICI
+    // On utilise `selectedTicket` du slice, qui est mis à jour par `fetchTicketById`.
+    // C'est la source de données la plus fiable et complète.
+    const ticket = useSelector((state) => state.tickets.selectedTicket);
+
     const [newMessage, setNewMessage] = useState('');
     const [files, setFiles] = useState([]);
     const [editingMessage, setEditingMessage] = useState(null);
@@ -138,6 +141,7 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const assignedAdmin = ticket?.assignedAdmin;
     const otherParticipant = isAdmin ? ticketUser : (assignedAdmin || { username: 'Support BATIClean', role: 'admin' });
 
+    // ... (toutes les fonctions handler restent les mêmes)
     const handleEdit = (message) => { setEditingMessage({ _id: message._id, text: message.text }); setNewMessage(message.text); };
     const handleDelete = (message) => { dispatch(deleteMessage({ ticketId, messageId: message._id })); };
     const handleDoubleClick = (event, message) => { if (message.isDeleted) return; setSelectedMessageForReaction(message); setReactionMenuAnchor(event.currentTarget); };
@@ -204,7 +208,6 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
                     <IconButton onClick={onClose}><CloseIcon /></IconButton>
                 </Box>
                 
-                {/* ✅ DÉBUT DE LA NOUVELLE EN-TÊTE DE CONVERSATION */}
                 {otherParticipant && ticket && (
                     <Box>
                         <Box sx={{ px: 1, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -224,7 +227,6 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
                         <Divider />
                     </Box>
                 )}
-                {/* ✅ FIN DE LA NOUVELLE EN-TÊTE */}
 
                 <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1, mt: 1 }}>
                     {!ticket ? <CircularProgress /> : (
