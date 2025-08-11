@@ -1,5 +1,3 @@
-// src/pages/MyBookingsPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserBookings, cancelBooking, toggleHideBooking, markOneBookingAsRead } from '../redux/bookingSlice.js';
@@ -28,6 +26,7 @@ function MyBookingsPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [expanded, setExpanded] = useState(false);
 
+    // --- TOUTE LA LOGIQUE RESTE INCHANGÉE ---
     useEffect(() => {
         dispatch(fetchUserBookings(showHidden));
     }, [dispatch, showHidden]);
@@ -87,21 +86,29 @@ function MyBookingsPage() {
 
     return (
         <>
-            <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h4" gutterBottom>
+            {/* RESPONSIVE: Marges et padding ajustés */}
+            <Container maxWidth="md" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+                {/* RESPONSIVE: En-tête de page flexible */}
+                <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    justifyContent="space-between" 
+                    alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                    mb={3}
+                >
+                    <Typography variant={{ xs: 'h5', sm: 'h4' }} gutterBottom>
                         {showHidden ? 'Réservations Archivées' : 'Mes Réservations'}
                     </Typography>
                     <FormControlLabel
                         control={<Switch checked={showHidden} onChange={() => setShowHidden(!showHidden)} />}
                         label="Voir les archives"
+                        sx={{ ml: { xs: 0, sm: 1 } }}
                     />
                 </Stack>
+                
                 {bookingsToDisplay.length === 0 ? (
                     <Typography>{showHidden ? 'Aucune réservation archivée.' : 'Vous n\'avez aucune réservation pour le moment.'}</Typography>
                 ) : (
                     bookingsToDisplay
-                        // ✅ CORRECTION APPLIQUÉE ICI pour ne jamais planter
                         .filter(booking => booking && booking.service)
                         .map(booking => (
                             <Accordion 
@@ -110,17 +117,31 @@ function MyBookingsPage() {
                                 onChange={handleAccordionChange(booking._id)}
                             >
                                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', pr: 2 }}>
+                                    {/* RESPONSIVE: Le conteneur principal du résumé devient une colonne sur mobile */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        justifyContent: 'space-between', 
+                                        width: '100%', 
+                                        alignItems: { xs: 'flex-start', sm: 'center' },
+                                        gap: 1.5
+                                    }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                             {!booking.isReadByUser && !showHidden && (
                                                 <Badge color="success" variant="dot" />
                                             )}
-                                            <Typography>
-                                                {/* On ajoute une sécurité ici aussi, au cas où */}
+                                            {/* RESPONSIVE: Le titre peut maintenant prendre toute la largeur nécessaire */}
+                                            <Typography variant="body1">
                                                 {booking.service?.title || 'Service Supprimé'} - {new Date(booking.bookingDate).toLocaleDateString()}
                                             </Typography>
                                         </Box>
-                                        <Stack direction="row" spacing={1} alignItems="center">
+                                        {/* RESPONSIVE: Le statut et l'icône s'alignent à droite sur mobile */}
+                                        <Stack 
+                                            direction="row" 
+                                            spacing={1} 
+                                            alignItems="center"
+                                            sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'flex-end' }}
+                                        >
                                             <Chip 
                                                 label={booking.status} 
                                                 color={booking.status === 'Confirmée' ? 'success' : booking.status === 'Terminée' ? 'primary' : booking.status === 'Annulée' ? 'error' : 'info'} 
@@ -136,14 +157,10 @@ function MyBookingsPage() {
                                 <AccordionDetails>
                                     <Typography variant="h6">Suivi de votre réservation :</Typography>
                                     <BookingTimeline timeline={booking.timeline} currentStatus={booking.status} />
-                                    <Box sx={{mt: 2, display: 'flex', gap: 1}}>
+                                    {/* RESPONSIVE: Le conteneur des boutons peut passer à la ligne */}
+                                    <Box sx={{mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap'}}>
                                         {!showHidden && booking.status === 'En attente' && (
-                                            <Button 
-                                                variant="contained" 
-                                                color="warning" 
-                                                size="small" 
-                                                onClick={() => setBookingToCancel(booking._id)}
-                                            >
+                                            <Button variant="contained" color="warning" size="small" onClick={() => setBookingToCancel(booking._id)}>
                                                 Annuler la réservation
                                             </Button>
                                         )}
@@ -153,7 +170,7 @@ function MyBookingsPage() {
                                             </Button>
                                         )}
                                         {booking.status === 'Terminée' && booking.hasBeenReviewed && (
-                                             <Chip label="Vous avez déjà laissé un avis" color="success" variant="outlined" size="small" />
+                                            <Chip label="Vous avez déjà laissé un avis" color="success" variant="outlined" size="small" />
                                         )}
                                     </Box>
                                 </AccordionDetails>

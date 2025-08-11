@@ -1,5 +1,3 @@
-// src/pages/AdminReclamationsPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllReclamations, hideReclamation, unhideReclamation } from '../redux/reclamationSlice.js';
@@ -31,8 +29,6 @@ function AdminReclamationsPage() {
     };
     
     const reclamationsToDisplay = showArchived ? archivedItems : reclamations;
-
-    // ✅ On s'assure que la liste est bien un tableau avant de faire quoi que ce soit
     const validReclamations = Array.isArray(reclamationsToDisplay) ? reclamationsToDisplay.filter(Boolean) : [];
 
     if (loading && validReclamations.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
@@ -40,14 +36,23 @@ function AdminReclamationsPage() {
 
     return (
         <>
-            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h4" gutterBottom>
+            {/* RESPONSIVE: Ajustement des marges et du padding */}
+            <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+                {/* RESPONSIVE: La direction et l'alignement du Stack s'adaptent */}
+                <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    justifyContent="space-between" 
+                    alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                    mb={3}
+                >
+                    {/* RESPONSIVE: La taille de la police du titre est réduite sur xs */}
+                    <Typography variant={{ xs: 'h5', sm: 'h4' }} gutterBottom>
                         {showArchived ? 'Réclamations Archivées' : 'Gestion des Réclamations'}
                     </Typography>
                     <FormControlLabel
                         control={<Switch checked={showArchived} onChange={() => setShowArchived(!showArchived)} />}
                         label="Voir les archives"
+                        sx={{ ml: { xs: 0, sm: 1 } }} // RESPONSIVE: Marge ajustée
                     />
                 </Stack>
 
@@ -57,21 +62,20 @@ function AdminReclamationsPage() {
                     validReclamations.map((reclamation) => (
                         <Paper 
                             key={reclamation._id} 
-                            // ✅ BONUS : Amélioration pour l'affichage sur mobile
+                            // Le code ci-dessous était déjà excellent pour le responsive, on le conserve !
                             sx={{ 
                                 p: 2, 
                                 mb: 2, 
                                 display: 'flex', 
-                                flexDirection: { xs: 'column', sm: 'row' }, // Empile verticalement sur mobile
+                                flexDirection: { xs: 'column', sm: 'row' },
                                 alignItems: 'center', 
                                 justifyContent: 'space-between',
-                                gap: { xs: 2, sm: 1 } // Ajoute de l'espace sur mobile
+                                gap: { xs: 2, sm: 1 }
                             }}
                         >
                             <Box sx={{ width: '100%' }}>
                                 <Typography variant="h6">Réclamation de {reclamation.user?.username || 'Utilisateur inconnu'}</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {/* ✅ SÉCURITÉ : On vérifie que la date existe avant de la formater */}
                                     Statut: {reclamation.status || 'Inconnu'} - Reçue le: {reclamation.createdAt ? format(new Date(reclamation.createdAt), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'Date inconnue'}
                                 </Typography>
                             </Box>

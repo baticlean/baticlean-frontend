@@ -1,5 +1,3 @@
-// src/pages/AdminBookingsPage.jsx (Corrigé et Robuste)
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllBookings, hideBooking, unhideBooking } from '../redux/bookingSlice.js';
@@ -34,8 +32,6 @@ function AdminBookingsPage() {
     };
 
     const bookingsToDisplay = showHidden ? hiddenAdminBookings : allBookings;
-
-    // ✅ On ajoute un filtre de sécurité pour ne jamais mapper sur des données invalides
     const validBookings = Array.isArray(bookingsToDisplay) ? bookingsToDisplay.filter(Boolean) : [];
 
     if (loading && validBookings.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
@@ -43,37 +39,61 @@ function AdminBookingsPage() {
 
     return (
         <>
-            <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h4" gutterBottom>
+            {/* RESPONSIVE: Ajustement des marges et du padding pour les petits écrans */}
+            <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+                
+                {/* RESPONSIVE: La direction du Stack passe en 'column' sur xs */}
+                <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    justifyContent="space-between" 
+                    alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                    mb={3}
+                >
+                    {/* RESPONSIVE: La taille de la police du titre est réduite sur xs */}
+                    <Typography variant={{ xs: 'h5', sm: 'h4' }} gutterBottom>
                         {showHidden ? 'Réservations Archivées' : 'Gestion des Réservations'}
                     </Typography>
                     <FormControlLabel
                         control={<Switch checked={showHidden} onChange={() => setShowHidden(!showHidden)} />}
                         label="Voir les archives"
+                        // RESPONSIVE: On supprime la marge à gauche sur mobile pour un meilleur alignement
+                        sx={{ ml: { xs: 0, sm: 1 } }} 
                     />
                 </Stack>
                 <TableContainer component={Paper}>
-                    <Table>
+                    <Table aria-label="simple table">
                         <TableHead>
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Utilisateur</TableCell>
                                 <TableCell sx={{ fontWeight: 'bold' }}>Service</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
+                                
+                                {/* RESPONSIVE: Colonne masquée sur les écrans xs */}
+                                <TableCell sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Date</TableCell>
+                                
+                                {/* RESPONSIVE: Colonne masquée sur les écrans xs */}
+                                <TableCell sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Statut</TableCell>
+                                
                                 <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {validBookings.map((booking) => (
                                 <TableRow key={booking._id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell>{booking.user ? booking.user.username : <Typography variant="caption" color="error">Utilisateur supprimé</Typography>}</TableCell>
+                                    <TableCell component="th" scope="row">
+                                        {booking.user ? booking.user.username : <Typography variant="caption" color="error">Utilisateur supprimé</Typography>}
+                                    </TableCell>
                                     <TableCell>{booking.service ? booking.service.title : <Typography variant="caption" color="error">Service supprimé</Typography>}</TableCell>
                                     
-                                    {/* ✅ SÉCURITÉ : On vérifie que la date existe avant de l'afficher */}
-                                    <TableCell>{booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('fr-FR') : 'Date inconnue'}</TableCell>
+                                    {/* RESPONSIVE: Cellule masquée sur les écrans xs */}
+                                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                        {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('fr-FR') : 'Date inconnue'}
+                                    </TableCell>
                                     
-                                    <TableCell>{booking.status || 'Statut inconnu'}</TableCell>
+                                    {/* RESPONSIVE: Cellule masquée sur les écrans xs */}
+                                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                        {booking.status || 'Statut inconnu'}
+                                    </TableCell>
+                                    
                                     <TableCell align="right">
                                         <Tooltip title="Consulter les détails">
                                             <IconButton size="small" onClick={() => setSelectedBooking(booking)} color="primary">

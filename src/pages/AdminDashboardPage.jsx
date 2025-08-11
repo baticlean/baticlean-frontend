@@ -1,5 +1,3 @@
-// src/pages/AdminDashboardPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { 
@@ -24,12 +22,13 @@ import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const StatCard = ({ title, value, icon }) => (
+// RESPONSIVE: On passe les props de taille d'icône et de variante de typo pour les rendre dynamiques
+const StatCard = ({ title, value, icon, iconSize, valueVariant }) => (
     <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-        {icon}
+        {/* On clone l'icône pour lui appliquer les styles responsives */}
+        {React.cloneElement(icon, { sx: { ...icon.props.sx, fontSize: iconSize } })}
         <Box>
-            {/* ✅ Sécurité : On utilise ?? pour s'assurer qu'on affiche toujours un nombre */}
-            <Typography variant="h6">{value ?? 0}</Typography>
+            <Typography variant={valueVariant}>{value ?? 0}</Typography>
             <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
         </Box>
     </Paper>
@@ -71,23 +70,28 @@ function AdminDashboardPage() {
         return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
     }
 
-    // ✅ Garde-fou principal renforcé pour s'assurer que l'objet de base existe.
     if (!stats) {
         return <Alert severity="warning" sx={{ m: 3 }}>Aucune donnée statistique à afficher pour le moment.</Alert>;
     }
 
+    // RESPONSIVE: On définit les tailles responsives ici pour les passer aux StatCards
+    const iconSize = { xs: 32, sm: 40 };
+    const valueVariant = { xs: 'h5', sm: 'h6' };
+
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Typography variant="h4" gutterBottom>
+        // RESPONSIVE: Ajustement des marges et du padding pour les petits écrans
+        <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+            {/* RESPONSIVE: La taille de la police du titre est réduite sur xs */}
+            <Typography variant={{ xs: 'h5', sm: 'h4' }} gutterBottom sx={{ mb: 3 }}>
                 Tableau de Bord
             </Typography>
             
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                {/* ✅ Sécurité : On accède aux statistiques de manière sécurisée avec ?. */}
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Total Utilisateurs" value={stats.stats?.totalUsers} icon={<PeopleAlt color="primary" sx={{ fontSize: 40 }} />} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Réservations en Attente" value={stats.stats?.pendingBookings} icon={<BookOnline color="warning" sx={{ fontSize: 40 }} />} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouveaux Clients (7j)" value={stats.stats?.newUsersLast7Days} icon={<PeopleAlt color="success" sx={{ fontSize: 40 }} />} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouvelles Réservations (7j)" value={stats.stats?.newBookingsLast7Days} icon={<BookOnline color="info" sx={{ fontSize: 40 }} />} /></Grid>
+                {/* On passe les props responsives à chaque StatCard */}
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Total Utilisateurs" value={stats.stats?.totalUsers} icon={<PeopleAlt color="primary" />} iconSize={iconSize} valueVariant={valueVariant} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Réservations en Attente" value={stats.stats?.pendingBookings} icon={<BookOnline color="warning" />} iconSize={iconSize} valueVariant={valueVariant} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouveaux Clients (7j)" value={stats.stats?.newUsersLast7Days} icon={<PeopleAlt color="success" />} iconSize={iconSize} valueVariant={valueVariant} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Nouvelles Réservations (7j)" value={stats.stats?.newBookingsLast7Days} icon={<BookOnline color="info" />} iconSize={iconSize} valueVariant={valueVariant} /></Grid>
             </Grid>
 
             <Grid container spacing={3}>
@@ -95,15 +99,20 @@ function AdminDashboardPage() {
                     <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
                         <Typography variant="h6" gutterBottom>Derniers Avis Clients</Typography>
                         <List sx={{ flexGrow: 1 }}>
-                            {/* ✅ Sécurité : On vérifie que recentReviews est bien un tableau */}
                             {Array.isArray(stats.recentReviews) && stats.recentReviews.length > 0 ? (
-                                // ✅ Sécurité : On filtre les avis potentiellement nuls ou invalides avant de mapper
                                 stats.recentReviews.filter(Boolean).map((review, index) => (
                                     <React.Fragment key={review._id || index}>
                                         <ListItem alignItems="flex-start">
                                             <ListItemText
-                                                // ✅ Sécurité : Chaque accès à une propriété est sécurisé
-                                                primary={<><Rating value={review?.rating ?? 0} readOnly size="small" /> pour "{review?.serviceTitle ?? 'Service non spécifié'}"</>}
+                                                // RESPONSIVE: Empilement vertical sur mobile pour une meilleure lisibilité
+                                                primary={
+                                                    <Box component="span" sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 0.5, sm: 1 }}}>
+                                                        <Rating value={review?.rating ?? 0} readOnly size="small" />
+                                                        <Typography variant="body2" component="span" color="text.secondary">
+                                                            pour "{review?.serviceTitle ?? 'Service non spécifié'}"
+                                                        </Typography>
+                                                    </Box>
+                                                }
                                                 secondary={<>"{review?.comment ?? ''}" - <Typography component="span" variant="body2" color="text.primary">{review?.username ?? 'Anonyme'}</Typography></>}
                                             />
                                         </ListItem>
@@ -121,15 +130,12 @@ function AdminDashboardPage() {
                     <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
                         <Typography variant="h6" gutterBottom>Derniers Tickets en Attente</Typography>
                         <List sx={{ flexGrow: 1 }}>
-                            {/* ✅ Sécurité : On vérifie que recentTickets est bien un tableau */}
                             {Array.isArray(stats.recentTickets) && stats.recentTickets.length > 0 ? (
-                                // ✅ Sécurité : On filtre les tickets sans utilisateur (ex: utilisateur supprimé)
                                 stats.recentTickets.filter(ticket => ticket && ticket.user).map((ticket, index) => (
                                     <React.Fragment key={ticket._id}>
                                         <ListItem>
                                             <ListItemAvatar><Avatar>{ticket.user.username?.[0]?.toUpperCase() ?? '?'}</Avatar></ListItemAvatar>
                                             <ListItemText
-                                                // ✅ Sécurité : Chaque accès à une propriété est sécurisé
                                                 primary={`Ticket de ${ticket.user?.username ?? 'Utilisateur supprimé'}`}
                                                 secondary={ticket.createdAt ? `Ouvert le: ${new Date(ticket.createdAt).toLocaleDateString('fr-FR')}` : 'Date inconnue'}
                                             />

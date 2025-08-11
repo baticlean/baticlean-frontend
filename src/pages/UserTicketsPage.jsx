@@ -1,5 +1,3 @@
-// src/pages/UserTicketsPage.jsx (Version Corrigée et Améliorée)
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserTickets, markTicketAsRead, archiveTicket } from '../redux/ticketSlice.js';
@@ -13,7 +11,21 @@ import TicketConversationModal from '../components/TicketConversationModal.jsx';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
 
-const UnreadIcon = () => <>⛔</>;
+// L'icône peut être personnalisée ici
+const UnreadIcon = () => (
+    <Box 
+        component="span" 
+        sx={{ 
+            width: 10, 
+            height: 10, 
+            borderRadius: '50%', 
+            bgcolor: 'primary.main', 
+            ml: 1, 
+            flexShrink: 0 
+        }} 
+    />
+);
+
 
 function UserTicketsPage() {
     const dispatch = useDispatch();
@@ -32,7 +44,6 @@ function UserTicketsPage() {
         }
     };
 
-    // La fonction d'archivage n'a plus besoin de "e.stopPropagation()"
     const handleArchiveToggle = (ticketId, isArchived) => {
         const action = isArchived ? 'Désarchivage' : 'Archivage';
         toast.promise(
@@ -53,19 +64,25 @@ function UserTicketsPage() {
 
     return (
     <>
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h4" gutterBottom>
+        {/* RESPONSIVE: Marges et padding ajustés */}
+        <Container maxWidth="md" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+            {/* RESPONSIVE: En-tête de page flexible */}
+            <Stack 
+                direction={{ xs: 'column', sm: 'row' }} 
+                justifyContent="space-between" 
+                alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                mb={3}
+            >
+                <Typography variant={{ xs: 'h5', sm: 'h4' }} gutterBottom>
                     {showArchived ? 'Conversations Archivées' : 'Mes Conversations'}
-                    {!showArchived && (
-                        <Badge badgeContent={unreadCount} color="error" sx={{ ml: 2 }}>
-                            💬
-                        </Badge>
+                    {!showArchived && unreadCount > 0 && (
+                        <Badge badgeContent={unreadCount} color="error" sx={{ ml: 2 }} />
                     )}
                 </Typography>
                 <FormControlLabel
                     control={<Switch checked={showArchived} onChange={() => setShowArchived(!showArchived)} />}
                     label="Voir les archives"
+                    sx={{ ml: { xs: 0, sm: 1 } }}
                 />
             </Stack>
             
@@ -74,7 +91,6 @@ function UserTicketsPage() {
                 {ticketsToDisplay && ticketsToDisplay.length > 0 ? ticketsToDisplay.map(ticket => {
                     const isUnread = !ticket.isReadByUser;
                     return (
-                    // On utilise ListItem avec la prop secondaryAction
                     <ListItem
                         key={ticket._id}
                         secondaryAction={
@@ -88,10 +104,9 @@ function UserTicketsPage() {
                         }
                         disablePadding
                         sx={{ 
-                            border: isUnread && !showArchived ? '2px solid #007BFF' : '1px solid #ddd', 
-                            m: 1, 
-                            borderRadius: 2,
-                            boxShadow: isUnread && !showArchived ? '0 0 10px rgba(0, 123, 255, 0.5)' : 'none',
+                            borderLeft: isUnread && !showArchived ? `4px solid` : 'none', 
+                            borderLeftColor: 'primary.main',
+                            mb: 1
                         }}
                     >
                         <ListItemButton onClick={() => handleOpenTicket(ticket)}>
@@ -101,14 +116,26 @@ function UserTicketsPage() {
                                 </Avatar>
                             </ListItemAvatar>
                             <ListItemText 
-                                primary={ticket.subject || "Conversation avec le support"} 
-                                secondary={`Statut: ${ticket.status} - Dernière MàJ: ${new Date(ticket.updatedAt).toLocaleString('fr-FR')}`} 
+                                primary={ticket.subject || "Conversation avec le support"}
+                                // RESPONSIVE: Le texte secondaire est maintenant un composant Stack pour s'afficher sur deux lignes
+                                secondary={
+                                    <Stack component="span" sx={{ mt: 0.5 }}>
+                                        <Typography component="span" variant="body2" color="text.secondary">
+                                            {`Statut: ${ticket.status}`}
+                                        </Typography>
+                                        <Typography component="span" variant="caption" color="text.secondary">
+                                            {`Dernière MàJ: ${new Date(ticket.updatedAt).toLocaleString('fr-FR')}`}
+                                        </Typography>
+                                    </Stack>
+                                }
+                                // RESPONSIVE: Empêche le titre de déborder s'il est trop long
+                                primaryTypographyProps={{ noWrap: true, textOverflow: 'ellipsis' }}
                             />
                             {isUnread && !showArchived && <UnreadIcon />}
                         </ListItemButton>
                     </ListItem>
                     )}) : (
-                    <Typography sx={{ p: 2 }}>
+                    <Typography sx={{ p: 2, textAlign: 'center' }}>
                         {showArchived ? "Vous n'avez aucune conversation archivée." : "Vous n'avez aucune conversation pour le moment."}
                     </Typography>
                     )}
