@@ -1,23 +1,23 @@
 /* Vos styles existants pour le body (inchangés) */
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
 }
 
 /* Vos styles pour le conteneur des toasts, qui les centre (inchangés) */
 .Toastify__toast-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  padding: 0;
-  margin: 0;
-  pointer-events: none; /* Permet de cliquer à travers le conteneur */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+    pointer-events: none; /* Permet de cliquer à travers le conteneur */
 }
 
 
@@ -26,35 +26,74 @@ body {
 /* =================================================================== */
 
 /* Style pour les notifications de succès, erreur, info, etc. (forme de pilule) */
-/* On combine vos styles de taille avec mes styles pour les bords arrondis. */
 .Toastify__toast--success,
 .Toastify__toast--error,
 .Toastify__toast--warning,
 .Toastify__toast--info,
 .Toastify__toast--default {
-  border-radius: 50px !important;
-  pointer-events: auto; /* Rend les notifications cliquables */
-  width: auto;
-  min-width: 250px;
-  max-width: 90%;
+    border-radius: 50px !important;
+    pointer-events: auto; /* Rend les notifications cliquables */
+    width: auto;
+    min-width: 250px;
+    max-width: 90%;
 }
 
 
 /* Style SPÉCIFIQUE pour le toast de chargement circulaire */
 .loading-toast-container {
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-  width: 100px;
-  height: 100px;
-  pointer-events: auto; /* Le rend cliquable aussi */
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    width: 100px;
+    height: 100px;
+    pointer-events: auto; /* Le rend cliquable aussi */
 }
 
 /* On s'assure que le contenu du toast de chargement remplit bien le cercle */
 .loading-toast-container .Toastify__toast-body {
-  padding: 0 !important;
-  margin: 0 !important;
-  width: 100%;
-  height: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* =================================================================== */
+/* ##   FIX POUR GOOGLE TRANSLATE SUR MOBILE                          ## */
+/* =================================================================== */
+
+/* Empêche le dézoom et la barre de scroll horizontale causés par le widget */
+html, body {
+    overflow-x: hidden !important;
+}
+
+/* Force la barre de traduction à prendre toute la largeur sans déborder */
+.goog-te-banner-frame.skiptranslate {
+    width: 100% !important;
+    box-sizing: border-box !important; /* S'assure que padding/border sont inclus dans la largeur */
+}
+
+/* Cache la partie "Traduire" qui déborde et n'est pas utile sur mobile */
+#goog-gt-tt .top {
+    display: none !important;
+}
+
+/* Ajuste le conteneur principal du widget pour qu'il soit bien aligné */
+#goog-gt-tt .middle {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important; /* Centre le contenu */
+    width: 100% !important;
+    padding: 4px 0 !important; /* Ajoute un peu d'espace vertical */
+}
+
+/* S'assure que le bouton "Fermer" (la croix) est toujours visible et cliquable */
+#goog-gt-tt .close {
+    position: absolute !important;
+    top: 50% !important;
+    right: 10px !important;
+    transform: translateY(-50%) !important; /* Centre verticalement la croix */
+    display: inline-block !important; /* Force l'affichage de la croix */
 }
