@@ -14,6 +14,21 @@ const SORT_OPTIONS = {
     popularity: 'Popularité'
 };
 
+// ✅ Nouveau composant interne pour gérer une ligne de boutons scrollable
+const ScrollableButtonGroup = ({ children }) => (
+    <Box sx={{
+        overflowX: 'auto',
+        pb: 1, // Un peu d'espace en bas pour l'ombre de la scrollbar
+        '&::-webkit-scrollbar': { height: '4px' },
+        '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: '2px' }
+    }}>
+        <ButtonGroup variant="outlined" sx={{ whiteSpace: 'nowrap' }}>
+            {children}
+        </ButtonGroup>
+    </Box>
+);
+
+
 function HomePage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -35,7 +50,6 @@ function HomePage() {
     if (category !== 'Tous') filters.category = category;
     if (sortBy !== 'createdAt') filters.sortBy = sortBy;
     
-    // Si l'utilisateur tape, on attend. S'il clique, on charge immédiatement.
     if (Object.keys(filters).includes('search')) {
         debouncedLoadServices(filters);
     } else {
@@ -47,35 +61,36 @@ function HomePage() {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Typography variant="h4" gutterBottom>Bienvenue, {user?.username} !</Typography>
+      <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.8rem', sm: '2.125rem' } }}>
+        Bienvenue, {user?.username} !
+      </Typography>
       
       {/* Barre de recherche et filtres */}
       <Paper sx={{ p: 2, mb: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
               fullWidth
-              placeholder="Rechercher un service (ex: nettoyage de vitres, réparation...)"
+              placeholder="Rechercher un service..."
               variant="outlined"
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
                   startAdornment: ( <InputAdornment position="start"><SearchIcon /></InputAdornment> ),
               }}
           />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-              <ButtonGroup variant="outlined" aria-label="Catégories de service">
-                  {CATEGORIES.map(cat => (
-                      <Button key={cat} variant={category === cat ? "contained" : "outlined"} onClick={() => setCategory(cat)}>
-                          {cat}
-                      </Button>
-                  ))}
-              </ButtonGroup>
-              <ButtonGroup variant="outlined" aria-label="Options de tri">
-                  {Object.entries(SORT_OPTIONS).map(([key, value]) => (
-                      <Button key={key} variant={sortBy === key ? "contained" : "outlined"} onClick={() => setSortBy(key)}>
-                          {value}
-                      </Button>
-                  ))}
-              </ButtonGroup>
-          </Box>
+          {/* ✅ On utilise notre nouveau composant pour les deux lignes de filtres */}
+          <ScrollableButtonGroup>
+            {CATEGORIES.map(cat => (
+                <Button key={cat} variant={category === cat ? "contained" : "outlined"} onClick={() => setCategory(cat)}>
+                    {cat}
+                </Button>
+            ))}
+          </ScrollableButtonGroup>
+          <ScrollableButtonGroup>
+            {Object.entries(SORT_OPTIONS).map(([key, value]) => (
+                <Button key={key} variant={sortBy === key ? "contained" : "outlined"} onClick={() => setSortBy(key)}>
+                    {value}
+                </Button>
+            ))}
+          </ScrollableButtonGroup>
       </Paper>
 
       <Typography variant="h5" sx={{ mb: 3 }}>Nos Services</Typography>
