@@ -32,4 +32,4 @@ export default function versionInjector() {
       console.log(`\nVersion injectée : ${buildVersion} (${buildTimestamp})`);
     }
   };
-}
+} 
