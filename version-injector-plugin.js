@@ -1,36 +1,35 @@
-// version-injector-plugin.js
+// vite-plugin-version-injector.js
 
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
 export default function versionInjector() {
-  // On génère la version une seule fois au début du build
-  const buildVersion = new Date().toISOString();
+  // On récupère l'identifiant unique du commit git
+  const buildVersion = execSync('git rev-parse --short HEAD').toString().trim();
+  // On récupère la date et l'heure actuelles
+  const buildTimestamp = new Date().toISOString();
 
   return {
-    // Nom du plugin (utile pour le débogage)
     name: 'version-injector',
     
-    // Ce hook est appelé par Vite pour transformer le fichier index.html final
     transformIndexHtml(html) {
       const metaTag = `<meta name="app-version" content="${buildVersion}">`;
-      // On injecte la balise de manière sûre
       return html.replace('</head>', `  ${metaTag}\n</head>`);
     },
     
-    // Ce hook est appelé par Vite juste avant de finaliser le build
     closeBundle() {
-      // On s'assure que le dossier 'dist' existe
-      const distPath = path.resolve(__dirname, 'dist');
-      if (!fs.existsSync(distPath)) {
-        fs.mkdirSync(distPath);
-      }
+      const distPath = path.resolve(process.cwd(), 'dist');
+      if (!fs.existsSync(distPath)) fs.mkdirSync(distPath);
       
-      // On écrit le fichier meta.json
-      const meta = { version: buildVersion };
+      // Le fichier meta contient maintenant la version ET la date
+      const meta = { 
+        version: buildVersion,
+        timestamp: buildTimestamp
+      };
       fs.writeFileSync(path.join(distPath, 'meta.json'), JSON.stringify(meta));
       
-      console.log(`\nVersion injectée : ${buildVersion}`);
+      console.log(`\nVersion injectée : ${buildVersion} (${buildTimestamp})`);
     }
   };
 }

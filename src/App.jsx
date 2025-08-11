@@ -86,20 +86,17 @@ const router = createBrowserRouter([
   },
 ]);
 
-// --- COMPOSANT MIS À JOUR POUR GÉRER LA NOTIFICATION ---
 function AppWithVersionCheck() {
   const versionInfo = useVersionCheck();
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    // On vérifie la propriété 'available' de l'objet retourné par le hook
     if (versionInfo.available) {
       setModalOpen(true);
     }
   }, [versionInfo]);
 
   const handleUpdate = () => {
-    // Forcer un rechargement complet de la page, ce qui vide le cache.
     window.location.reload(true);
   };
 
@@ -120,7 +117,6 @@ function AppWithVersionCheck() {
       />
       <CookieConsent />
       
-      {/* On passe l'objet versionInfo complet à la modale */}
       <UpdateNotification
         open={modalOpen}
         onClose={() => setModalOpen(false)}

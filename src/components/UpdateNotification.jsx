@@ -1,10 +1,24 @@
 // src/components/UpdateNotification.jsx
 
 import React from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, useMediaQuery, Box, Typography } from '@mui/material';
+import {
+  Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  useMediaQuery, Box, Typography, List, ListItem, ListItemIcon, ListItemText
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { toast } from 'react-toastify';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+// Un petit composant réutilisable pour afficher une ligne d'information
+const InfoPoint = ({ icon, primary, secondary }) => (
+  <ListItem sx={{ py: 0.5 }}>
+    <ListItemIcon sx={{ minWidth: 36 }}>
+      {icon}
+    </ListItemIcon>
+    <ListItemText primary={primary} secondary={secondary} />
+  </ListItem>
+);
 
 function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   const theme = useTheme();
@@ -13,6 +27,14 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   const handleFeedbackClick = () => {
     toast.info("Cette fonctionnalité est en cours de développement.");
   };
+
+  // Formate la date pour un affichage lisible
+  const updateDate = versionInfo.timestamp 
+    ? new Date(versionInfo.timestamp).toLocaleString('fr-FR', {
+        dateStyle: 'long',
+        timeStyle: 'short',
+      }) 
+    : 'Indisponible';
 
   return (
     <Dialog
@@ -28,17 +50,30 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
           Mise à Jour Disponible !
         </DialogTitle>
       </Box>
-      <DialogContent sx={{pt: 2}}>
-        <DialogContentText>
-            Une nouvelle version de l'application vient d'être déployée avec des améliorations et des correctifs.
-            {/* On pourrait afficher la nouvelle version ici si on voulait : versionInfo.version */}
-        </DialogContentText>
-        <DialogContentText sx={{ mt: 2, fontWeight: 500}}>
-            Pour en bénéficier, veuillez actualiser l'application.
-        </DialogContentText>
+      <DialogContent dividers>
+        <Typography gutterBottom>
+          Une nouvelle version de l'application vient d'être déployée avec des améliorations :
+        </Typography>
+        <List dense>
+          <InfoPoint 
+            icon={<InfoOutlinedIcon fontSize="small" color="action" />}
+            primary="Éditeur" 
+            secondary="BATICleanNIC"
+          />
+          <InfoPoint 
+            icon={<InfoOutlinedIcon fontSize="small" color="action" />}
+            primary="Date de la mise à jour" 
+            secondary={updateDate}
+          />
+          <InfoPoint 
+            icon={<InfoOutlinedIcon fontSize="small" color="action" />}
+            primary="Correctifs" 
+            secondary="Amélioration de la stabilité et des performances."
+          />
+        </List>
       </DialogContent>
-      <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-        <Button onClick={handleFeedbackClick} size="small">Donner un avis</Button>
+      <DialogActions sx={{ p: { xs: 2, sm: 3 }, justifyContent: 'space-between' }}>
+        <Button onClick={handleFeedbackClick} size="small">Laisser un avis</Button>
         <Box>
             <Button onClick={onClose}>Plus tard</Button>
             <Button onClick={onConfirm} variant="contained" autoFocus>
@@ -50,4 +85,4 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   );
 }
 
-export default UpdateNotification; 
+export default UpdateNotification;
