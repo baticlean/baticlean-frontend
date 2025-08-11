@@ -1,0 +1,26 @@
+# render.yaml
+
+services:
+  # Assure-toi que le nom correspond bien au nom de ton service sur le tableau de bord Render
+  - type: static
+    name: BATIClean.ci
+    env: static
+    # La branche que tu déploies
+    branch: main
+    # Commande de build (doit correspondre à ton package.json)
+    buildCommand: "npm run build"
+    # Le dossier où se trouve le site construit
+    staticPublishPath: ./dist
+
+    # ✅ --- C'EST LA PARTIE LA PLUS IMPORTANTE ---
+    # On ajoute des en-têtes HTTP pour contrôler le cache.
+    headers:
+      - path: "index.html"
+        name: "Cache-Control"
+        value: "no-cache, no-store, must-revalidate"
+      - path: "index.html"
+        name: "Pragma"
+        value: "no-cache"
+      - path: "index.html"
+        name: "Expires"
+        value: "0"

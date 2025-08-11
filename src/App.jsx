@@ -15,7 +15,6 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
 import LoginTransition from './components/LoginTransition.jsx';
 import CookieConsent from './components/CookieConsent.jsx';
-
 import MainLayout from './layout/MainLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -121,7 +120,7 @@ function AppWithVersionCheck() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleUpdate}
-        versionInfo={versionInfo}
+        versionInfo={versionInfo} // On passe bien l'objet complet
       />
     </>
   );
