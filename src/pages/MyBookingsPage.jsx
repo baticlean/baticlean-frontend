@@ -1,8 +1,7 @@
-// src/pages/MyBookingsPage.jsx (Version Finale)
+// src/pages/MyBookingsPage.jsx
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-// ✅ On importe la nouvelle action
 import { fetchUserBookings, cancelBooking, toggleHideBooking, markOneBookingAsRead } from '../redux/bookingSlice.js';
 import {
     Container, Typography, Box, CircularProgress, Alert,
@@ -27,8 +26,6 @@ function MyBookingsPage() {
     const [bookingToCancel, setBookingToCancel] = useState(null);
     const [bookingToReview, setBookingToReview] = useState(null);
     const [searchParams, setSearchParams] = useSearchParams();
-    
-    // ✅ NOUVEAU : État pour suivre les accordéons ouverts
     const [expanded, setExpanded] = useState(false);
 
     useEffect(() => {
@@ -68,14 +65,9 @@ function MyBookingsPage() {
         });
     };
 
-    // ✅ NOUVELLE FONCTION : Gère l'ouverture/fermeture et marque comme lu
     const handleAccordionChange = (panel) => (event, isExpanded) => {
         setExpanded(isExpanded ? panel : false);
-        
-        // On cherche la réservation correspondante
         const booking = bookingsToDisplay.find(b => b._id === panel);
-        
-        // Si elle est ouverte et non lue, on la marque comme lue
         if (isExpanded && booking && !booking.isReadByUser) {
             dispatch(markOneBookingAsRead(booking._id));
         }
@@ -108,63 +100,65 @@ function MyBookingsPage() {
                 {bookingsToDisplay.length === 0 ? (
                     <Typography>{showHidden ? 'Aucune réservation archivée.' : 'Vous n\'avez aucune réservation pour le moment.'}</Typography>
                 ) : (
-                    bookingsToDisplay.map(booking => (
-                        <Accordion 
-                            key={booking._id} 
-                            // ✅ MODIFIÉ : L'état d'ouverture est maintenant contrôlé
-                            expanded={expanded === booking._id} 
-                            onChange={handleAccordionChange(booking._id)}
-                        >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', pr: 2 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        {/* ✅ AFFICHAGE DU POINT VERT */}
-                                        {!booking.isReadByUser && !showHidden && (
-                                            <Badge color="success" variant="dot" />
-                                        )}
-                                        <Typography>
-                                            {booking.service.title} - {new Date(booking.bookingDate).toLocaleDateString()}
-                                        </Typography>
+                    bookingsToDisplay
+                        // ✅ CORRECTION APPLIQUÉE ICI pour ne jamais planter
+                        .filter(booking => booking && booking.service)
+                        .map(booking => (
+                            <Accordion 
+                                key={booking._id} 
+                                expanded={expanded === booking._id} 
+                                onChange={handleAccordionChange(booking._id)}
+                            >
+                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', pr: 2 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            {!booking.isReadByUser && !showHidden && (
+                                                <Badge color="success" variant="dot" />
+                                            )}
+                                            <Typography>
+                                                {/* On ajoute une sécurité ici aussi, au cas où */}
+                                                {booking.service?.title || 'Service Supprimé'} - {new Date(booking.bookingDate).toLocaleDateString()}
+                                            </Typography>
+                                        </Box>
+                                        <Stack direction="row" spacing={1} alignItems="center">
+                                            <Chip 
+                                                label={booking.status} 
+                                                color={booking.status === 'Confirmée' ? 'success' : booking.status === 'Terminée' ? 'primary' : booking.status === 'Annulée' ? 'error' : 'info'} 
+                                            />
+                                            <Tooltip title={showHidden ? "Restaurer" : "Archiver"}>
+                                                <IconButton size="small" onClick={(e) => handleToggleHide(e, booking._id)}>
+                                                    {showHidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
                                     </Box>
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <Chip 
-                                            label={booking.status} 
-                                            color={booking.status === 'Confirmée' ? 'success' : booking.status === 'Terminée' ? 'primary' : booking.status === 'Annulée' ? 'error' : 'info'} 
-                                        />
-                                        <Tooltip title={showHidden ? "Restaurer" : "Archiver"}>
-                                            <IconButton size="small" onClick={(e) => handleToggleHide(e, booking._id)}>
-                                                {showHidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                                            </IconButton>
-                                        </Tooltip>
-                                    </Stack>
-                                </Box>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <Typography variant="h6">Suivi de votre réservation :</Typography>
-                                <BookingTimeline timeline={booking.timeline} currentStatus={booking.status} />
-                                <Box sx={{mt: 2, display: 'flex', gap: 1}}>
-                                    {!showHidden && booking.status === 'En attente' && (
-                                        <Button 
-                                            variant="contained" 
-                                            color="warning" 
-                                            size="small" 
-                                            onClick={() => setBookingToCancel(booking._id)}
-                                        >
-                                            Annuler la réservation
-                                        </Button>
-                                    )}
-                                    {!showHidden && booking.status === 'Terminée' && !booking.hasBeenReviewed && (
-                                        <Button variant="contained" color="primary" size="small" startIcon={<StarIcon />} onClick={() => setBookingToReview(booking)}>
-                                            Laisser un avis
-                                        </Button>
-                                    )}
-                                    {booking.status === 'Terminée' && booking.hasBeenReviewed && (
-                                         <Chip label="Vous avez déjà laissé un avis" color="success" variant="outlined" size="small" />
-                                    )}
-                                </Box>
-                            </AccordionDetails>
-                        </Accordion>
-                    ))
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Typography variant="h6">Suivi de votre réservation :</Typography>
+                                    <BookingTimeline timeline={booking.timeline} currentStatus={booking.status} />
+                                    <Box sx={{mt: 2, display: 'flex', gap: 1}}>
+                                        {!showHidden && booking.status === 'En attente' && (
+                                            <Button 
+                                                variant="contained" 
+                                                color="warning" 
+                                                size="small" 
+                                                onClick={() => setBookingToCancel(booking._id)}
+                                            >
+                                                Annuler la réservation
+                                            </Button>
+                                        )}
+                                        {!showHidden && booking.status === 'Terminée' && !booking.hasBeenReviewed && (
+                                            <Button variant="contained" color="primary" size="small" startIcon={<StarIcon />} onClick={() => setBookingToReview(booking)}>
+                                                Laisser un avis
+                                            </Button>
+                                        )}
+                                        {booking.status === 'Terminée' && booking.hasBeenReviewed && (
+                                             <Chip label="Vous avez déjà laissé un avis" color="success" variant="outlined" size="small" />
+                                        )}
+                                    </Box>
+                                </AccordionDetails>
+                            </Accordion>
+                        ))
                 )}
             </Container>
 
