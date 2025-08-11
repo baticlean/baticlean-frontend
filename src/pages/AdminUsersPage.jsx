@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
+// src/pages/AdminUsersPage.jsx
+
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUsers, updateUser, notifyUserRestored } from '../redux/adminSlice.js';
-import { Container, Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, ButtonGroup, CircularProgress, Alert, TextField } from '@mui/material';
+import {
+  Container, Typography, Box, Paper, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Button, ButtonGroup, CircularProgress, Alert, TextField
+} from '@mui/material';
 import { toast } from 'react-toastify';
 import { onNewUserRegistered, offNewUserRegistered } from '../socket/socket.js';
 
@@ -10,19 +15,16 @@ function AdminUsersPage() {
   const { users, loading, error } = useSelector((state) => state.admin);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Ce useEffect gère la recherche avec un délai pour ne pas surcharger le serveur
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       dispatch(fetchUsers(searchTerm));
-    }, 500); // On attend 500ms après que l'utilisateur a fini de taper
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, dispatch]);
 
-  // Ce useEffect gère la mise à jour en temps réel lors d'une nouvelle inscription
   useEffect(() => {
     const handleNewUser = () => {
-      // On recharge la liste en conservant le filtre de recherche actuel
       dispatch(fetchUsers(searchTerm));
     };
     onNewUserRegistered(handleNewUser);
@@ -48,13 +50,16 @@ function AdminUsersPage() {
     });
   };
 
-  if (loading && users.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+  // ✅ SÉCURITÉ : On s'assure que "users" est bien un tableau et on filtre les entrées invalides.
+  const validUsers = Array.isArray(users) ? users.filter(Boolean) : [];
+
+  if (loading && validUsers.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
   if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4" gutterBottom>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
           Gestion des Utilisateurs
         </Typography>
         <TextField
@@ -65,8 +70,9 @@ function AdminUsersPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </Box>
-      <TableContainer component={Paper}>
-        <Table>
+      {/* ✅ BONUS : On rend le tableau scrollable horizontalement sur les petits écrans */}
+      <TableContainer component={Paper} sx={{ overflowX: { xs: 'auto', md: 'visible' } }}>
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
               <TableCell>Nom d'utilisateur</TableCell>
@@ -78,13 +84,15 @@ function AdminUsersPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
+            {/* ✅ On utilise notre liste sécurisée "validUsers" */}
+            {validUsers.map((user) => (
               <TableRow key={user._id}>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.phoneNumber}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.status}</TableCell>
+                {/* ✅ SÉCURITÉ : On ajoute des valeurs par défaut pour chaque cellule */}
+                <TableCell>{user.username ?? 'Nom manquant'}</TableCell>
+                <TableCell>{user.email ?? 'Email manquant'}</TableCell>
+                <TableCell>{user.phoneNumber ?? 'N/A'}</TableCell>
+                <TableCell>{user.role ?? 'Inconnu'}</TableCell>
+                <TableCell>{user.status ?? 'Inconnu'}</TableCell>
                 <TableCell align="right">
                   <ButtonGroup variant="contained" size="small">
                     {user.role === 'user' ? (
@@ -93,9 +101,9 @@ function AdminUsersPage() {
                       <Button color="secondary" onClick={() => handleUpdate(user._id, { role: 'user' })}>Rétrograder</Button>
                     )}
                     {user.status === 'active' ? (
-                       <Button color="warning" onClick={() => handleUpdate(user._id, { status: 'suspended' })}>Suspendre</Button>
+                        <Button color="warning" onClick={() => handleUpdate(user._id, { status: 'suspended' })}>Suspendre</Button>
                     ) : (
-                       <Button color="success" onClick={() => handleUpdate(user._id, { status: 'active' })}>Activer</Button>
+                        <Button color="success" onClick={() => handleUpdate(user._id, { status: 'active' })}>Activer</Button>
                     )}
                     <Button color="error" onClick={() => handleUpdate(user._id, { status: 'banned' })}>Bannir</Button>
                     <Button color="info" onClick={() => handleNotify(user._id)}>Notifier</Button>

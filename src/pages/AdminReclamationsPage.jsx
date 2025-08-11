@@ -1,3 +1,4 @@
+// src/pages/AdminReclamationsPage.jsx
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,43 +10,34 @@ import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 import { format } from 'date-fns';
 import fr from 'date-fns/locale/fr';
 import ReclamationDetailsModal from '../components/ReclamationDetailsModal.jsx';
+
 function AdminReclamationsPage() {
     const dispatch = useDispatch();
-    // ✅ On récupère les réclamations actives ET archivées
     const { items: reclamations, archivedItems, loading, error } = useSelector((state) => state.reclamations);
     const [selectedReclamation, setSelectedReclamation] = useState(null);
-    const [showArchived, setShowArchived] = useState(false); // ✅ État pour afficher les archives
-    // ✅ On charge les bonnes réclamations quand le composant se monte ou que l'on bascule la vue
+    const [showArchived, setShowArchived] = useState(false);
+
     useEffect(() => {
         dispatch(fetchAllReclamations(showArchived));
     }, [dispatch, showArchived]);
-    // ✅ Gère l'archivage et la restauration
+
     const handleToggleArchive = (reclamationId) => {
-        if (showArchived) {
-            toast.promise(
-                dispatch(unhideReclamation(reclamationId)).unwrap(),
-                {
-                    pending: 'Restauration en cours...',
-                    success: 'Réclamation restaurée !',
-                    error: 'Erreur lors de la restauration.'
-                }
-            );
-        } else {
-            toast.promise(
-                dispatch(hideReclamation(reclamationId)).unwrap(),
-                {
-                    pending: 'Archivage en cours...',
-                    success: 'Réclamation archivée !',
-                    error: 'Erreur lors de l\'archivage.'
-                }
-            );
-        }
+        const action = showArchived ? unhideReclamation : hideReclamation;
+        const messages = showArchived 
+            ? { pending: 'Restauration...', success: 'Réclamation restaurée !', error: 'Erreur.' }
+            : { pending: 'Archivage...', success: 'Réclamation archivée !', error: 'Erreur.' };
+
+        toast.promise(dispatch(action(reclamationId)).unwrap(), messages);
     };
     
-    // ✅ On choisit la bonne liste à afficher
     const reclamationsToDisplay = showArchived ? archivedItems : reclamations;
-    if (loading && reclamationsToDisplay.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+
+    // ✅ On s'assure que la liste est bien un tableau avant de faire quoi que ce soit
+    const validReclamations = Array.isArray(reclamationsToDisplay) ? reclamationsToDisplay.filter(Boolean) : [];
+
+    if (loading && validReclamations.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
+
     return (
         <>
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -58,18 +50,32 @@ function AdminReclamationsPage() {
                         label="Voir les archives"
                     />
                 </Stack>
-                {reclamationsToDisplay.length === 0 ? (
+
+                {validReclamations.length === 0 ? (
                     <Typography>{showArchived ? 'Aucune réclamation archivée.' : 'Aucune réclamation pour le moment.'}</Typography>
                 ) : (
-                    reclamationsToDisplay.map((reclamation) => (
-                        <Paper key={reclamation._id} sx={{ p: 2, mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Box>
+                    validReclamations.map((reclamation) => (
+                        <Paper 
+                            key={reclamation._id} 
+                            // ✅ BONUS : Amélioration pour l'affichage sur mobile
+                            sx={{ 
+                                p: 2, 
+                                mb: 2, 
+                                display: 'flex', 
+                                flexDirection: { xs: 'column', sm: 'row' }, // Empile verticalement sur mobile
+                                alignItems: 'center', 
+                                justifyContent: 'space-between',
+                                gap: { xs: 2, sm: 1 } // Ajoute de l'espace sur mobile
+                            }}
+                        >
+                            <Box sx={{ width: '100%' }}>
                                 <Typography variant="h6">Réclamation de {reclamation.user?.username || 'Utilisateur inconnu'}</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Statut: {reclamation.status} - Reçue le: {format(new Date(reclamation.createdAt), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                                    {/* ✅ SÉCURITÉ : On vérifie que la date existe avant de la formater */}
+                                    Statut: {reclamation.status || 'Inconnu'} - Reçue le: {reclamation.createdAt ? format(new Date(reclamation.createdAt), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'Date inconnue'}
                                 </Typography>
                             </Box>
-                            <Box>
+                            <Box sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}>
                                 <Button variant="contained" size="small" sx={{ mr: 1 }} onClick={() => setSelectedReclamation(reclamation)}>Consulter</Button>
                                 <IconButton color={showArchived ? "default" : "error"} onClick={() => handleToggleArchive(reclamation._id)}>
                                     {showArchived ? <RestoreFromTrashIcon /> : <DeleteIcon />}
@@ -83,4 +89,5 @@ function AdminReclamationsPage() {
         </>
     );
 }
+
 export default AdminReclamationsPage;

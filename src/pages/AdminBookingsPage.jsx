@@ -1,4 +1,4 @@
-// src/pages/AdminBookingsPage.jsx (Corrigé)
+// src/pages/AdminBookingsPage.jsx (Corrigé et Robuste)
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -35,7 +35,10 @@ function AdminBookingsPage() {
 
     const bookingsToDisplay = showHidden ? hiddenAdminBookings : allBookings;
 
-    if (loading && bookingsToDisplay.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+    // ✅ On ajoute un filtre de sécurité pour ne jamais mapper sur des données invalides
+    const validBookings = Array.isArray(bookingsToDisplay) ? bookingsToDisplay.filter(Boolean) : [];
+
+    if (loading && validBookings.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
     return (
@@ -62,13 +65,15 @@ function AdminBookingsPage() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {bookingsToDisplay.map((booking) => (
+                            {validBookings.map((booking) => (
                                 <TableRow key={booking._id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    {/* ✅ SÉCURITÉ : On vérifie que les données existent */}
                                     <TableCell>{booking.user ? booking.user.username : <Typography variant="caption" color="error">Utilisateur supprimé</Typography>}</TableCell>
                                     <TableCell>{booking.service ? booking.service.title : <Typography variant="caption" color="error">Service supprimé</Typography>}</TableCell>
-                                    <TableCell>{new Date(booking.bookingDate).toLocaleDateString()}</TableCell>
-                                    <TableCell>{booking.status}</TableCell>
+                                    
+                                    {/* ✅ SÉCURITÉ : On vérifie que la date existe avant de l'afficher */}
+                                    <TableCell>{booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('fr-FR') : 'Date inconnue'}</TableCell>
+                                    
+                                    <TableCell>{booking.status || 'Statut inconnu'}</TableCell>
                                     <TableCell align="right">
                                         <Tooltip title="Consulter les détails">
                                             <IconButton size="small" onClick={() => setSelectedBooking(booking)} color="primary">

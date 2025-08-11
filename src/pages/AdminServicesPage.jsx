@@ -1,3 +1,5 @@
+// src/pages/AdminServicesPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchServices, deleteService, createService, updateService } from '../redux/serviceSlice.js';
@@ -41,12 +43,15 @@ function AdminServicesPage() {
         error: `Erreur lors de la ${serviceToEdit ? 'mise à jour' : 'création'}.`
       }
     ).then(() => {
-      // On rafraîchit la liste depuis le serveur pour éviter les doublons
       dispatch(fetchServices());
     });
   };
 
   const handleDelete = (id) => {
+    if (!id) {
+        toast.error("Impossible de supprimer un service sans identifiant.");
+        return;
+    }
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
       toast.promise(
         dispatch(deleteService(id)).unwrap(),
@@ -59,7 +64,10 @@ function AdminServicesPage() {
     }
   };
 
-  if (loading && services.length === 0) {
+  // ✅ SÉCURITÉ : On s'assure que "services" est bien un tableau et on filtre les entrées potentiellement vides ou nulles.
+  const validServices = Array.isArray(services) ? services.filter(Boolean) : [];
+
+  if (loading && validServices.length === 0) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
   }
 
@@ -89,11 +97,13 @@ function AdminServicesPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {services.map((service) => (
+              {/* ✅ On utilise notre liste sécurisée "validServices" */}
+              {validServices.map((service) => (
                 <TableRow key={service._id}>
-                  <TableCell>{service.title}</TableCell>
-                  <TableCell>{service.category}</TableCell>
-                  <TableCell>{service.price} €</TableCell>
+                  {/* ✅ SÉCURITÉ : On ajoute des valeurs par défaut pour chaque cellule pour éviter les plantages */}
+                  <TableCell>{service.title ?? 'Titre manquant'}</TableCell>
+                  <TableCell>{service.category ?? 'Catégorie manquante'}</TableCell>
+                  <TableCell>{(service.price ?? 'N/A')} €</TableCell>
                   <TableCell align="right">
                     <Button size="small" sx={{ mr: 1 }} onClick={() => handleOpenModal(service)}>Modifier</Button>
                     <Button variant="contained" color="error" size="small" onClick={() => handleDelete(service._id)}>Supprimer</Button>
