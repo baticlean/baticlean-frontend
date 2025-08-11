@@ -6,22 +6,29 @@ import { fetchUsers, updateUser, notifyUserRestored } from '../redux/adminSlice.
 import {
     Container, Typography, Box, Paper, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, TextField,
-    Stack, IconButton // On importe IconButton
+    Stack, IconButton, Tooltip, useTheme, useMediaQuery // ✅ Ajouts pour le responsive
 } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info'; // On importe l'icône pour le bouton
+// ✅ On importe toutes les icônes dont nous avons besoin
+import { 
+    Info, ArrowUpward, ArrowDownward, PauseCircleOutline, 
+    CheckCircleOutline, Gavel, Email 
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { onNewUserRegistered, offNewUserRegistered } from '../socket/socket.js';
-import UserDetailsModal from '../components/UserDetailsModal.jsx'; // ✅ On importe notre nouvelle modale
+import UserDetailsModal from '../components/UserDetailsModal.jsx';
 
 function AdminUsersPage() {
     const dispatch = useDispatch();
     const { users, loading, error } = useSelector((state) => state.admin);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // ✅ On ajoute les états pour gérer la modale
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
+    // ✅ Hook pour détecter si on est sur un écran mobile
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    // ... (toute la logique des useEffect et des handlers reste inchangée)
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             dispatch(fetchUsers(searchTerm));
@@ -55,7 +62,6 @@ function AdminUsersPage() {
         });
     };
 
-    // ✅ Fonctions pour ouvrir/fermer la modale
     const handleOpenModal = (user) => {
         setSelectedUser(user);
         setModalOpen(true);
@@ -66,13 +72,14 @@ function AdminUsersPage() {
         setSelectedUser(null);
     };
 
+
     const validUsers = Array.isArray(users) ? users.filter(Boolean) : [];
 
     if (loading && validUsers.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
     return (
-        <> {/* On encapsule dans un fragment pour la modale */}
+        <>
             <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
                 <Stack
                     direction={{ xs: 'column', md: 'row' }}
@@ -114,30 +121,22 @@ function AdminUsersPage() {
                                     <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{user.role ?? 'Inconnu'}</TableCell>
                                     <TableCell>{user.status ?? 'Inconnu'}</TableCell>
                                     <TableCell align="right">
-                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                            {/* ✅ Le nouveau bouton "Infos" */}
-                                            <Button 
-                                                variant="outlined" 
-                                                size="small" 
-                                                color="info" 
-                                                onClick={() => handleOpenModal(user)}
-                                                sx={{ display: { xs: 'inline-flex', md: 'none' } }} // N'apparaît que sur mobile
-                                            >
-                                                Infos
-                                            </Button>
-
+                                        {/* ✅ Les boutons utilisent maintenant des icônes sur mobile */}
+                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                            <Tooltip title="Infos"><IconButton size="small" color="info" onClick={() => handleOpenModal(user)}><Info /></IconButton></Tooltip>
+                                            
                                             {user.role === 'user' ? (
-                                                <Button variant="contained" size="small" color="primary" onClick={() => handleUpdate(user._id, { role: 'admin' })}>Promouvoir</Button>
+                                                <Tooltip title="Promouvoir"><IconButton size="small" color="primary" onClick={() => handleUpdate(user._id, { role: 'admin' })}><ArrowUpward /></IconButton></Tooltip>
                                             ) : (
-                                                <Button variant="contained" size="small" color="secondary" onClick={() => handleUpdate(user._id, { role: 'user' })}>Rétrograder</Button>
+                                                <Tooltip title="Rétrograder"><IconButton size="small" color="secondary" onClick={() => handleUpdate(user._id, { role: 'user' })}><ArrowDownward /></IconButton></Tooltip>
                                             )}
                                             {user.status === 'active' ? (
-                                                <Button variant="contained" size="small" color="warning" onClick={() => handleUpdate(user._id, { status: 'suspended' })}>Suspendre</Button>
+                                                <Tooltip title="Suspendre"><IconButton size="small" color="warning" onClick={() => handleUpdate(user._id, { status: 'suspended' })}><PauseCircleOutline /></IconButton></Tooltip>
                                             ) : (
-                                                <Button variant="contained" size="small" color="success" onClick={() => handleUpdate(user._id, { status: 'active' })}>Activer</Button>
+                                                <Tooltip title="Activer"><IconButton size="small" color="success" onClick={() => handleUpdate(user._id, { status: 'active' })}><CheckCircleOutline /></IconButton></Tooltip>
                                             )}
-                                            <Button variant="contained" size="small" color="error" onClick={() => handleUpdate(user._id, { status: 'banned' })}>Bannir</Button>
-                                            <Button variant="contained" size="small" color="info" onClick={() => handleNotify(user._id)}>Notifier</Button>
+                                            <Tooltip title="Bannir"><IconButton size="small" color="error" onClick={() => handleUpdate(user._id, { status: 'banned' })}><Gavel /></IconButton></Tooltip>
+                                            <Tooltip title="Notifier"><IconButton size="small" color="info" onClick={() => handleNotify(user._id)}><Email /></IconButton></Tooltip>
                                         </Box>
                                     </TableCell>
                                 </TableRow>
@@ -147,7 +146,6 @@ function AdminUsersPage() {
                 </TableContainer>
             </Container>
 
-            {/* ✅ On affiche la modale si un utilisateur est sélectionné */}
             <UserDetailsModal
                 open={modalOpen}
                 onClose={handleCloseModal}
