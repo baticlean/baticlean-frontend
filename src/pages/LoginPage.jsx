@@ -2,28 +2,21 @@
 
 import React, { useState } from 'react';
 import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Link,
-  IconButton,
-  InputAdornment,
-  CircularProgress,
+  Container, Box, Typography, TextField, Button, Grid,
+  Link, IconButton, InputAdornment
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, setToken } from '../redux/authSlice.js';
 import { toast } from 'react-toastify';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material'; // AJOUT : ArrowBackIcon
+import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import ReactivatedNotice from '../components/ReactivatedNotice.jsx';
+import FullScreenLoader from '../components/FullScreenLoader.jsx'; // ✅ IMPORT
 
 function LoginPage() {
   const [formData, setFormData] = useState({ login: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // ✅ Cet état contrôle maintenant notre loader
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -62,84 +55,86 @@ function LoginPage() {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography component="h1" variant="h5">
-          Connexion
-        </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Email ou Numéro de téléphone"
-            name="login"
-            autoFocus
-            value={formData.login}
-            onChange={handleChange}
-            disabled={loading}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Mot de passe"
-            type={showPassword ? 'text' : 'password'}
-            value={formData.password}
-            onChange={handleChange}
-            disabled={loading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 1 }} // MODIFIÉ : mb: 1
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Se Connecter'}
-          </Button>
+    <>
+      {/* ✅ Le loader est ici, en dehors du formulaire */}
+      <FullScreenLoader open={loading} message="Connexion en cours..." />
 
-          {/* AJOUT : Bouton Retour */}
-          <Button
-            type="button"
-            fullWidth
-            variant="outlined"
-            onClick={() => navigate('/')}
-            startIcon={<ArrowBackIcon />}
-            sx={{ mb: 2 }}
-            disabled={loading}
-          >
-            Retour
-          </Button>
+      <Container component="main" maxWidth="xs">
+        <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Typography component="h1" variant="h5">
+            Connexion
+          </Typography>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Email ou Numéro de téléphone"
+              name="login"
+              autoFocus
+              value={formData.login}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Mot de passe"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              disabled={loading}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 1 }}
+              disabled={loading}
+            >
+              {/* ✅ Le bouton n'affiche plus le spinner */}
+              Se Connecter
+            </Button>
 
-          {/* ----- C'EST ICI LA MODIFICATION ----- */}
-          <Grid container sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-            <Grid item xs={12} sm>
-              <Link component={RouterLink} to="/forgot-password" variant="body2">
-                Mot de passe oublié ?
-              </Link>
+            <Button
+              type="button"
+              fullWidth
+              variant="outlined"
+              onClick={() => navigate('/')}
+              startIcon={<ArrowBackIcon />}
+              sx={{ mb: 2 }}
+              disabled={loading}
+            >
+              Retour
+            </Button>
+
+            <Grid container sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+              <Grid item xs={12} sm>
+                <Link component={RouterLink} to="/forgot-password" variant="body2">
+                  Mot de passe oublié ?
+                </Link>
+              </Grid>
+              <Grid item xs={12} sm="auto">
+                <Link component={RouterLink} to="/register" variant="body2">
+                  Pas encore de compte ? S'inscrire
+                </Link>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm="auto">
-              <Link component={RouterLink} to="/register" variant="body2">
-                Pas encore de compte ? S'inscrire
-              </Link>
-            </Grid>
-          </Grid>
-          {/* ----- FIN DE LA MODIFICATION ----- */}
-
+          </Box>
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </>
   );
 }
 
