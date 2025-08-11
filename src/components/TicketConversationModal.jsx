@@ -1,9 +1,8 @@
-// src/components/TicketConversationModal.jsx (Version finale avec "Voir plus")
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessageToTicket, editMessage, deleteMessage, reactToMessage } from '../redux/ticketSlice.js';
-import { Modal, Box, Typography, TextField, Button, List, ListItem, ListItemText, CircularProgress, Paper, IconButton, Link, Menu, MenuItem, Popover, Chip } from '@mui/material';
+// ✅ Ajout de Avatar et Divider
+import { Modal, Box, Typography, TextField, Button, List, ListItem, ListItemText, CircularProgress, Paper, IconButton, Link, Menu, MenuItem, Popover, Chip, Avatar, Divider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -37,16 +36,13 @@ const useLongPress = (callback = () => {}, ms = 1000) => {
     };
 };
 
-// Mini-composant pour un seul message
+// --- Mini-composant pour un seul message (INCHANGÉ) ---
 function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onReact }) {
     const dispatch = useDispatch();
     const isMe = msg.sender?._id === currentUser._id;
     const [anchorEl, setAnchorEl] = useState(null);
-    
-    // ✅ NOUVEAU : État pour gérer l'expansion des messages longs
     const [isExpanded, setIsExpanded] = useState(false);
     const isLongMessage = msg.text && msg.text.length > 350;
-
     const handleMenuClick = (event) => { if (isMe && !msg.isDeleted) setAnchorEl(event.currentTarget); };
     const handleCloseMenu = () => setAnchorEl(null);
     const handleEditClick = () => { onEdit(msg); handleCloseMenu(); };
@@ -55,7 +51,6 @@ function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onRe
     const otherParticipantId = isMe ? (isAdmin ? ticket.user._id : ticket.assignedAdmin?._id) : null;
     const isRead = otherParticipantId ? msg.readBy?.includes(otherParticipantId) : false;
     const isVoiceMessage = msg.attachments?.length > 0 && msg.attachments.some(file => file.fileType.startsWith('audio/'));
-    
     let bgColor;
     if (isMe) { bgColor = isVoiceMessage ? 'success.main' : 'primary.main'; } 
     else { bgColor = isVoiceMessage ? '#e0e0e0' : '#f0f0f0'; }
@@ -67,8 +62,6 @@ function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onRe
                     {msg.isDeleted ? ( <Typography variant="body2" sx={{ fontStyle: 'italic', color: isMe ? '#eeeeee' : 'text.secondary' }}>Ce message a été supprimé</Typography> ) : (
                         <>
                             {isVoiceMessage && msg.attachments.map((file, i) => file.fileType.startsWith('audio/') ? (<AudioPlayer key={i} src={file.url} isMe={isMe} />) : null)}
-                            
-                            {/* ✅ NOUVEAU : Logique d'affichage pour les messages longs */}
                             {msg.text && (
                                 <ListItemText 
                                     primary={isLongMessage && !isExpanded ? `${msg.text.substring(0, 145)}...` : msg.text} 
@@ -80,7 +73,6 @@ function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onRe
                                     {isExpanded ? 'Voir moins' : 'Voir plus...'}
                                 </Button>
                             )}
-
                             {msg.attachments?.length > 0 && (
                                 <Box sx={{ mt: msg.text || isVoiceMessage ? 1 : 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                                     {msg.attachments.map((file, fileIndex) => !file.fileType.startsWith('audio/') && (
@@ -121,6 +113,13 @@ function MessageItem({ msg, ticket, currentUser, isAdmin, onEdit, onDelete, onRe
     );
 }
 
+// ✅ On ajoute l'objet de style pour les badges de rôle
+const roleStyles = {
+    superAdmin: { color: 'error', variant: 'filled' },
+    admin: { color: 'warning', variant: 'outlined' },
+    user: { color: 'success', variant: 'outlined' },
+};
+
 function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
@@ -133,6 +132,12 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const [selectedMessageForReaction, setSelectedMessageForReaction] = useState(null);
     const messagesEndRef = useRef(null);
     const { isRecording, startRecording, stopRecording, audioBlob, resetAudio } = useAudioRecorder();
+    
+    // ✅ On définit qui sont les interlocuteurs pour l'en-tête
+    const ticketUser = ticket?.user;
+    const assignedAdmin = ticket?.assignedAdmin;
+    const otherParticipant = isAdmin ? ticketUser : (assignedAdmin || { username: 'Support BATIClean', role: 'admin' });
+
     const handleEdit = (message) => { setEditingMessage({ _id: message._id, text: message.text }); setNewMessage(message.text); };
     const handleDelete = (message) => { dispatch(deleteMessage({ ticketId, messageId: message._id })); };
     const handleDoubleClick = (event, message) => { if (message.isDeleted) return; setSelectedMessageForReaction(message); setReactionMenuAnchor(event.currentTarget); };
@@ -140,20 +145,24 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
     const handleOpenEmojiPicker = (event) => setEmojiPickerAnchor(event.currentTarget);
     const onEmojiClick = (emojiObject) => handleReact(emojiObject.emoji);
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    
     useEffect(() => { scrollToBottom(); }, [ticket?.messages]);
+
     useEffect(() => {
-      if (open) {
-        setTimeout(scrollToBottom, 100);
-        if (ticketId && currentUser?._id) emitMarkMessagesAsRead({ ticketId, readerId: currentUser._id });
-      } else {
-        setFiles([]); setEditingMessage(null); setNewMessage(''); resetAudio();
-      }
+        if (open) {
+            setTimeout(scrollToBottom, 100);
+            if (ticketId && currentUser?._id) emitMarkMessagesAsRead({ ticketId, readerId: currentUser._id });
+        } else {
+            setFiles([]); setEditingMessage(null); setNewMessage(''); resetAudio();
+        }
     }, [open, ticketId, currentUser, resetAudio]);
+
     useEffect(() => {
         if (audioBlob) {
             handleSendMessage();
         }
     }, [audioBlob]);
+
     const onDrop = useCallback((acceptedFiles, fileRejections) => {
         if (files.length + acceptedFiles.length > 5) toast.error("Vous ne pouvez envoyer que 5 fichiers à la fois.");
         else {
@@ -162,8 +171,10 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
             fileRejections.forEach(({ file, errors }) => errors.forEach(err => toast.error(err.code === "file-too-large" ? `"${file.name}" est trop volumineux (max 15Mo).` : err.message)));
         }
     }, [files]);
+
     const { getRootProps, getInputProps } = useDropzone({ onDrop, maxSize: 15 * 1024 * 1024, maxFiles: 5, accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'], 'application/pdf': ['.pdf'], 'application/zip': ['.zip'], 'application/msword': ['.doc'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] } });
     const removeFile = (fileToRemove) => setFiles(currentFiles => currentFiles.filter(file => file !== fileToRemove));
+
     const handleSendMessage = (e) => {
         if (e) e.preventDefault();
         if (!newMessage.trim() && files.length === 0 && !audioBlob) return;
@@ -181,17 +192,41 @@ function TicketConversationModal({ ticketId, open, onClose, isAdmin }) {
         setFiles([]);
         resetAudio();
     };
-    const style = { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '90%', maxWidth: 600, bgcolor: 'background.paper', boxShadow: 24, p: 2, display: 'flex', flexDirection: 'column', height: '80vh' };
+
+    const style = { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '90%', maxWidth: 800, bgcolor: 'background.paper', boxShadow: 24, p: 2, display: 'flex', flexDirection: 'column', height: '85vh', borderRadius: '8px' };
     const DEFAULT_REACTIONS = ['✅', '🙏', '👍', '👊', '👎'];
 
     return (
         <Modal open={open} onClose={onClose}>
             <Box sx={style}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1, mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1 }}>
                     <Typography variant="h6">Conversation - Ticket #{ticketId?.slice(-6)}</Typography>
                     <IconButton onClick={onClose}><CloseIcon /></IconButton>
                 </Box>
-                <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1 }}>
+                
+                {/* ✅ DÉBUT DE LA NOUVELLE EN-TÊTE DE CONVERSATION */}
+                {otherParticipant && ticket && (
+                    <Box>
+                        <Box sx={{ px: 1, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Avatar src={otherParticipant.profilePicture} />
+                            <Box>
+                                <Typography variant="body1" fontWeight="bold">{otherParticipant.username}</Typography>
+                                {otherParticipant.role && (
+                                    <Chip
+                                        label={otherParticipant.role}
+                                        size="small"
+                                        color={roleStyles[otherParticipant.role]?.color || 'default'}
+                                        variant={roleStyles[otherParticipant.role]?.variant || 'outlined'}
+                                    />
+                                )}
+                            </Box>
+                        </Box>
+                        <Divider />
+                    </Box>
+                )}
+                {/* ✅ FIN DE LA NOUVELLE EN-TÊTE */}
+
+                <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1, mt: 1 }}>
                     {!ticket ? <CircularProgress /> : (
                         <List>{ticket.messages.map((msg) => (<MessageItem key={msg._id} msg={msg} ticket={ticket} currentUser={currentUser} isAdmin={isAdmin} onEdit={handleEdit} onDelete={handleDelete} onReact={handleDoubleClick}/>))}
                             <div ref={messagesEndRef} />
