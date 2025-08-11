@@ -1,6 +1,9 @@
+// vite.config.js
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import versionInjector from './version-injector-plugin.js'; // ✅ On importe notre plugin
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -26,6 +29,7 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    versionInjector(), // ✅ On ajoute notre plugin à la fin de la liste
   ],
 })
