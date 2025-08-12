@@ -6,7 +6,6 @@ import { jwtDecode } from 'jwt-decode';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Helper pour décoder le token (INCHANGÉ)
 const getUserFromToken = (token) => {
     if (!token) return null;
     try {
@@ -17,7 +16,6 @@ const getUserFromToken = (token) => {
     }
 };
 
-// Thunk pour la connexion (INCHANGÉ)
 export const loginUser = createAsyncThunk('auth/login', async (userData, { rejectWithValue }) => {
     try {
         const response = await axios.post(`${API_URL}/api/auth/login`, userData);
@@ -35,7 +33,6 @@ export const loginUser = createAsyncThunk('auth/login', async (userData, { rejec
     }
 });
 
-// Thunk pour l'inscription (INCHANGÉ)
 export const registerUser = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
     try {
         const response = await axios.post(`${API_URL}/api/auth/register`, userData);
@@ -45,7 +42,6 @@ export const registerUser = createAsyncThunk('auth/register', async (userData, {
     }
 });
 
-// Thunk pour supprimer un avertissement spécifique (INCHANGÉ)
 export const clearWarning = createAsyncThunk(
     'auth/clearWarning',
     async (warningId, { getState, rejectWithValue }) => {
@@ -83,23 +79,14 @@ const authSlice = createSlice({
             state.error = null;
         },
 
-        // ✅ AMÉLIORÉ: Logique de fusion robuste pour éviter la perte de données
+        // ✅ LA CORRECTION DÉFINITIVE EST ICI
         updateUserFromSocket: (state, action) => {
             if (state.user && action.payload.user && action.payload.user._id === state.user._id) {
                 const updatedUserData = action.payload.user;
 
-                // Fusionne le nouvel objet utilisateur tout en préservant les objets imbriqués
-                state.user = {
-                    ...state.user,
-                    ...updatedUserData,
-                    // Fusion explicite pour les objets imbriqués que vous pourriez avoir.
-                    // Adaptez ceci à votre structure de données si nécessaire.
-                    // Par exemple, si vous avez un champ 'details':
-                    // details: {
-                    //     ...state.user.details,
-                    //     ...updatedUserData.details,
-                    // },
-                };
+                // On fusionne les données de manière sûre pour ne rien écraser.
+                // Object.assign fusionne les propriétés à la racine de l'objet.
+                Object.assign(state.user, updatedUserData);
 
                 // La logique du token reste la même
                 if (action.payload.newToken) {
@@ -116,14 +103,11 @@ const authSlice = createSlice({
             state.token = action.payload;
             state.user = getUserFromToken(action.payload);
         },
-        // Reducer pour ajouter un avertissement reçu en temps réel (INCHANGÉ)
         addWarningFromSocket: (state, action) => {
             if (state.user) {
-                // S'assure que le tableau warnings existe
                 if (!state.user.warnings) {
                     state.user.warnings = [];
                 }
-                // Ajoute le nouvel avertissement au début de la liste
                 state.user.warnings.unshift(action.payload);
             }
         }
@@ -166,7 +150,6 @@ const authSlice = createSlice({
                 state.loading = false; 
                 state.error = action.payload; 
             })
-            // Gérer la mise à jour de l'utilisateur après suppression d'un avertissement (INCHANGÉ)
             .addCase(clearWarning.fulfilled, (state, action) => {
                 state.user = action.payload;
             });
