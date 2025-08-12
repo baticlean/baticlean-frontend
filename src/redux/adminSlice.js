@@ -1,10 +1,11 @@
+// src/redux/adminSlice.js (Corrigé)
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { emitWarnUser } from '../socket/socket.js'; // Assurez-vous que cet import est correct
+import { emitWarnUser } from '../socket/socket.js';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// On modifie fetchUsers pour accepter un terme de recherche
 export const fetchUsers = createAsyncThunk('admin/fetchUsers', async (searchTerm = '', { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -29,7 +30,8 @@ export const updateUser = createAsyncThunk('admin/updateUser', async ({ userId, 
     }
 });
 
-// Cette action peut être supprimée si "Avertir" la remplace complètement
+// Cette action est maintenant gérée par le nouveau système d'avertissement,
+// mais on la garde au cas où tu en aurais besoin ailleurs.
 export const notifyUserRestored = createAsyncThunk('admin/notifyRestored', async (userId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -41,18 +43,34 @@ export const notifyUserRestored = createAsyncThunk('admin/notifyRestored', async
     }
 });
 
-// NOUVELLE ACTION POUR ENVOYER UN AVERTISSEMENT
+// ✅ --- DÉBUT DE LA MODIFICATION ---
+// L'action `warnUser` est maintenant plus intelligente
 export const warnUser = createAsyncThunk(
   'admin/warnUser',
-  async ({ userId, message }, { rejectWithValue }) => {
+  // Elle attend maintenant un objet contenant userId, message, et les actions
+  async ({ userId, message, actions }, { getState, rejectWithValue }) => {
     try {
-      emitWarnUser({ userId, message });
-      return { success: true, userId, message };
+      // Elle récupère l'admin actuellement connecté depuis le state Redux
+      const { user: adminUser } = getState().auth;
+      if (!adminUser) {
+        throw new Error("Action non autorisée. Administrateur non connecté.");
+      }
+
+      // Elle envoie toutes les infos nécessaires au backend via le socket
+      emitWarnUser({ 
+        userId, 
+        message, 
+        actions,
+        adminId: adminUser._id // On inclut l'ID de l'admin
+      });
+
+      return { success: true, userId };
     } catch (error) {
       return rejectWithValue(error.toString());
     }
   }
 );
+// ✅ --- FIN DE LA MODIFICATION ---
 
 const adminSlice = createSlice({
     name: 'admin',
@@ -82,12 +100,8 @@ const adminSlice = createSlice({
                     state.users[index] = action.payload;
                 }
             })
-            // On peut ajouter ici la gestion de l'action warnUser si nécessaire
-            // Par exemple, pour afficher un indicateur de chargement.
-            // Pour l'instant, nous le gérons avec toast.promise directement.
             .addCase(warnUser.fulfilled, (state, action) => {
-                // Optionnel: faire quelque chose quand l'avertissement est envoyé avec succès
-                console.log('Avertissement envoyé avec succès à', action.payload.userId);
+                console.log('Avertissement envoyé avec succès via socket à', action.payload.userId);
             });
     },
 });

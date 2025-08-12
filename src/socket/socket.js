@@ -185,11 +185,12 @@ export const offNotificationCountsUpdated = () => {
   if (socket) socket.off('notificationCountsUpdated');
 };
 
-// ✅ --- NOUVELLES FONCTIONS POUR LES AVERTISSEMENTS ---
+
+// ✅ --- SECTION MISE À JOUR POUR LES AVERTISSEMENTS PERSISTANTS ---
 
 /**
- * Émis par l'admin pour envoyer un avertissement à un utilisateur.
- * @param {object} data - Doit contenir { userId, message }
+ * Émis par l'admin pour envoyer et sauvegarder un avertissement.
+ * @param {object} data - Doit contenir { userId, adminId, message, actions }
  */
 export const emitWarnUser = (data) => {
   if (socket) {
@@ -198,25 +199,20 @@ export const emitWarnUser = (data) => {
 };
 
 /**
- * Écouté par le client pour recevoir un avertissement.
- * @param {function} callback - La fonction à exécuter avec le message reçu.
+ * Écouté par le GlobalSocketListener pour savoir quand rafraîchir la liste des avertissements.
+ * @param {function} callback - La fonction à exécuter (sans arguments).
  */
-export const onUserWarning = (callback) => {
+export const onNewWarningReceived = (callback) => {
     if (socket) {
-        socket.on('user:receive_warning', (data) => {
-            // On s'assure qu'on a bien un message avant de le passer
-            if (data && data.message) {
-                callback(data.message);
-            }
-        });
+        socket.on('user:new_warning_received', callback);
     }
 };
 
 /**
- * Nettoie l'écouteur d'avertissement.
+ * Nettoie l'écouteur de signal d'avertissement.
  */
-export const offUserWarning = () => {
+export const offNewWarningReceived = () => {
     if (socket) {
-        socket.off('user:receive_warning');
+        socket.off('user:new_warning_received');
     }
 };

@@ -10,6 +10,9 @@ import { useVersionCheck } from './hooks/useVersionCheck';
 import UpdateNotification from './components/UpdateNotification';
 // --- FIN DES IMPORTS ---
 
+// ✅ 1. On importe notre nouveau composant d'avertissement persistant
+import SpecialWarning from './components/SpecialWarning.jsx';
+
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -120,8 +123,11 @@ function AppWithVersionCheck() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleUpdate}
-        versionInfo={versionInfo} // On passe bien l'objet complet
+        versionInfo={versionInfo}
       />
+      
+      {/* ✅ 2. On ajoute le composant ici. Il sera toujours actif. */}
+      <SpecialWarning />
     </>
   );
 }

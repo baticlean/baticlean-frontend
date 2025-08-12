@@ -1,3 +1,5 @@
+// src/pages/AdminUsersPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUsers, updateUser, warnUser } from '../redux/adminSlice.js';
@@ -66,20 +68,24 @@ function AdminUsersPage() {
         setWarningModalOpen(true);
     };
 
-    const handleSendWarning = (message) => {
+    // ✅ DÉBUT DE LA MODIFICATION
+    // La fonction reçoit maintenant un objet { message, actions }
+    const handleSendWarning = ({ message, actions }) => {
         if (!userToWarn) return;
         
         toast.promise(
-            dispatch(warnUser({ userId: userToWarn._id, message })).unwrap(),
+            // On envoie toutes les informations à notre action Redux
+            dispatch(warnUser({ userId: userToWarn._id, message, actions })).unwrap(),
             {
                 pending: 'Envoi de l\'avertissement...',
-                success: 'Avertissement envoyé !',
+                success: 'Avertissement envoyé et sauvegardé !',
                 error: 'Erreur lors de l\'envoi.'
             }
         );
         setWarningModalOpen(false);
         setUserToWarn(null);
     };
+    // ✅ FIN DE LA MODIFICATION
 
     const validUsers = Array.isArray(users) ? users.filter(Boolean) : [];
 
