@@ -1,10 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { emitWarnUser } from '../socket/socket.js'; // Assurez-vous que cet import est correct
+// On n'a plus besoin d'importer emitWarnUser ici
+// import { emitWarnUser } from '../socket/socket.js'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// On modifie fetchUsers pour accepter un terme de recherche
+// Thunk pour récupérer les utilisateurs (INCHANGÉ)
 export const fetchUsers = createAsyncThunk('admin/fetchUsers', async (searchTerm = '', { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -17,6 +18,7 @@ export const fetchUsers = createAsyncThunk('admin/fetchUsers', async (searchTerm
     }
 });
 
+// Thunk pour mettre à jour un utilisateur (INCHANGÉ)
 export const updateUser = createAsyncThunk('admin/updateUser', async ({ userId, data }, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -29,7 +31,7 @@ export const updateUser = createAsyncThunk('admin/updateUser', async ({ userId, 
     }
 });
 
-// Cette action peut être supprimée si "Avertir" la remplace complètement
+// Thunk pour notifier la restauration (INCHANGÉ)
 export const notifyUserRestored = createAsyncThunk('admin/notifyRestored', async (userId, { getState, rejectWithValue }) => {
     try {
         const { token } = getState().auth;
@@ -41,15 +43,20 @@ export const notifyUserRestored = createAsyncThunk('admin/notifyRestored', async
     }
 });
 
-// NOUVELLE ACTION POUR ENVOYER UN AVERTISSEMENT
+// ✅ MODIFICATION DU THUNK POUR ENVOYER UN AVERTISSEMENT
 export const warnUser = createAsyncThunk(
   'admin/warnUser',
-  async ({ userId, message }, { rejectWithValue }) => {
+  async ({ userId, message }, { getState, rejectWithValue }) => {
     try {
-      emitWarnUser({ userId, message });
-      return { success: true, userId, message };
+      // On récupère le token pour l'authentification
+      const { token } = getState().auth;
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      // On appelle la nouvelle route POST du backend
+      await axios.post(`${API_URL}/api/admin/users/${userId}/warn`, { message }, config);
+      return { success: true, userId };
     } catch (error) {
-      return rejectWithValue(error.toString());
+      // En cas d'erreur, on la renvoie pour l'afficher dans le toast
+      return rejectWithValue(error.response?.data?.message || 'Une erreur est survenue');
     }
   }
 );
@@ -82,14 +89,15 @@ const adminSlice = createSlice({
                     state.users[index] = action.payload;
                 }
             })
-            // On peut ajouter ici la gestion de l'action warnUser si nécessaire
-            // Par exemple, pour afficher un indicateur de chargement.
-            // Pour l'instant, nous le gérons avec toast.promise directement.
+            // La gestion des cas pour warnUser reste la même,
+            // principalement pour le suivi si nécessaire.
             .addCase(warnUser.fulfilled, (state, action) => {
-                // Optionnel: faire quelque chose quand l'avertissement est envoyé avec succès
                 console.log('Avertissement envoyé avec succès à', action.payload.userId);
+            })
+            .addCase(warnUser.rejected, (state, action) => {
+                console.error("Échec de l'envoi de l'avertissement:", action.payload);
             });
     },
 });
 
-export default adminSlice.reducer; 
+export default adminSlice.reducer;
