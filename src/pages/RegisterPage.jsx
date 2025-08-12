@@ -6,8 +6,8 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-// MODIFICATION: Importer loginUser pour la connexion automatique
-import { registerUser, loginUser } from '../redux/authSlice.js';
+// ✅ On importe loginUser en plus de registerUser
+import { registerUser, loginUser } from '../redux/authSlice.js'; 
 import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input/min';
 import 'react-phone-number-input/style.css';
 import './PhoneNumber.css';
@@ -26,51 +26,51 @@ function RegisterPage() {
         setFormData({ ...formData, [name]: value });
     };
 
+    // ✅✅✅ DÉBUT DE LA LOGIQUE CORRIGÉE ✅✅✅
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // Validations (inchangées)
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         if (!emailRegex.test(formData.email)) {
             toast.error("Veuillez entrer une adresse email valide.");
             return;
         }
-
         if (!phoneNumber || !isPossiblePhoneNumber(phoneNumber)) {
             toast.error("Veuillez entrer un numéro de téléphone valide.");
             return;
         }
+        // Fin des validations
 
         const finalFormData = { ...formData, phoneNumber };
-        
         setLoading(true);
 
+        // Étape 1 : Inscription
         dispatch(registerUser(finalFormData))
             .unwrap()
             .then(() => {
-                // MODIFICATION: Connexion automatique juste après l'inscription
-                const loginData = { email: formData.email, password: formData.password };
-                dispatch(loginUser(loginData))
-                    .unwrap()
-                    .then(() => {
-                        // L'utilisateur est connecté, on le redirige vers l'écran de bienvenue
-                        // avec l'état 'isNewUser' pour afficher le bon message.
-                        navigate('/welcome', { replace: true, state: { isNewUser: true } });
-                    })
-                    .catch(() => {
-                        // En cas d'échec de la connexion auto, on redirige vers la page de login manuelle
-                        toast.warn("Inscription réussie ! Veuillez vous connecter manuellement.");
-                        navigate('/login');
-                    });
+                // Étape 2 : Si l'inscription réussit, on lance la connexion automatique
+                toast.success('Inscription réussie ! Connexion en cours...');
+                return dispatch(loginUser({ email: formData.email, password: formData.password })).unwrap();
+            })
+            .then(() => {
+                // Étape 3 : Si la connexion réussit, on redirige vers l'écran de bienvenue
+                // On met un petit délai pour que l'utilisateur voie le message de succès
+                setTimeout(() => {
+                    navigate('/welcome', { state: { isNewUser: true }, replace: true });
+                }, 1500);
             })
             .catch((error) => {
+                // Si l'une ou l'autre des étapes échoue, on affiche une erreur
                 toast.error(error || "Une erreur est survenue lors de l'inscription.");
-                setLoading(false); // On arrête le loader en cas d'erreur d'inscription
+                setLoading(false); // On arrête le chargement en cas d'erreur
             });
+            // Le .finally() n'est plus nécessaire ici car on gère la fin du chargement dans les .then() et .catch()
     };
+    // ✅✅✅ FIN DE LA LOGIQUE CORRIGÉE ✅✅✅
 
     return (
         <>
-            {/* Le loader affiche un message plus adapté */}
             <FullScreenLoader open={loading} message="Finalisation de l'inscription..." />
 
             <Container component="main" maxWidth="xs">
@@ -105,7 +105,7 @@ function RegisterPage() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={formData.password}
                                     onChange={handleChange}
-                                    helperText="Doit contenir 9 caractères (3 chiffres, et 1 caractère spécial)."
+                                    helperText="Doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
                                     disabled={loading}
                                     InputProps={{
                                         endAdornment: (
