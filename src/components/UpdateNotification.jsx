@@ -73,6 +73,12 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
             icon={<InfoOutlinedIcon color="action" />}
             primary="Conseils" 
             secondary="Vous pourrez toujours mettre à jour en cliquant sur 'Mise à jour' depuis votre photo de proifil."
+           />
+            <InfoPoint 
+            icon={<InfoOutlinedIcon color="action" />}
+            primary="Conseils" 
+            secondary="Si vous êtes sur mobile, veuillez glissez vers le bas depuis votre écran ou actualisez en utilisant la fonction de votre navigateur après avoir refermer cette fenêtre."
+
 
           />
         </List>
