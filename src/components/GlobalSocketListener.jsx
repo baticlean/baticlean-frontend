@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { updateUserFromSocket, setJustReactivated } from '../redux/authSlice.js';
+// ✅ On importe la nouvelle action pour ajouter un avertissement
+import { updateUserFromSocket, setJustReactivated, addWarningFromSocket } from '../redux/authSlice.js';
 import { updateServiceFromSocket, removeServiceFromSocket } from '../redux/serviceSlice.js';
 import { updateBookingFromSocket, addBooking, removeBooking, fetchUserBookings } from '../redux/bookingSlice.js';
 import { addAdminTicket, removeAdminTicket, updateTicket } from '../redux/ticketSlice.js';
@@ -21,10 +22,10 @@ import {
   onServiceUpdate, offServiceUpdate,
   onServiceDeleted, offServiceDeleted,
   onBookingStatusChanged, offBookingStatusChanged,
-  onUserWarning, offUserWarning // On importe les nouvelles fonctions
+  onUserWarning, offUserWarning
 } from '../socket/socket.js';
 
-import SpecialWarning from './SpecialWarning.jsx'; // On importe le composant
+// ❌ On retire l'import de SpecialWarning ici. Il sera dans App.jsx ou MainLayout.jsx
 
 const GlobalSocketListener = () => {
     const { user, token } = useSelector((state) => state.auth);
@@ -32,7 +33,9 @@ const GlobalSocketListener = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const userStateRef = useRef(user);
-    const [warningMessage, setWarningMessage] = useState(null);
+
+    // ❌ On supprime l'état local pour le message d'avertissement
+    // const [warningMessage, setWarningMessage] = useState(null);
 
     useEffect(() => {
         userStateRef.current = user;
@@ -48,8 +51,7 @@ const GlobalSocketListener = () => {
 
         const isAdmin = ['admin', 'superAdmin'].includes(userStateRef.current?.role);
 
-        // --- ÉCOUTEURS GÉNÉRAUX (POUR TOUS LES UTILISATEURS) ---
-        
+        // --- ÉCOUTEURS GÉNÉRAUX ---
         onUserUpdate((data) => {
             if (!data || !data.user) return;
             const { user: updatedUser, newToken } = data;
@@ -88,9 +90,8 @@ const GlobalSocketListener = () => {
         onServiceDeleted((data) => dispatch(removeServiceFromSocket(data)));
 
         // --- ÉCOUTEURS SPÉCIFIQUES ---
-
         if (isAdmin) {
-            // Écouteurs pour les admins uniquement
+            // Écouteurs pour les admins
             onNewUserRegistered((data) => toast.info(`👋 ${data.username} a rejoint BATIClean !`));
             onNewBooking((data) => dispatch(addBooking(data)));
             onBookingDeleted((data) => dispatch(removeBooking(data)));
@@ -100,15 +101,17 @@ const GlobalSocketListener = () => {
             onReclamationDeleted((data) => dispatch(removeReclamation(data)));
             onNotificationCountsUpdated((newCounts) => dispatch(setCounts(newCounts)));
         } else {
-            // Écouteurs pour les clients uniquement
+            // Écouteurs pour les clients
             onBookingStatusChanged((payload) => {
                 toast.info(payload.message);
                 dispatch(fetchUserBookings());
             });
 
-            // On écoute ici les avertissements pour l'utilisateur
-            onUserWarning((message) => {
-                setWarningMessage(message);
+            // ✅ On écoute les avertissements et on met à jour l'état Redux
+            onUserWarning((data) => {
+                if (data && data.warning) {
+                    dispatch(addWarningFromSocket(data.warning));
+                }
             });
         }
 
@@ -130,19 +133,14 @@ const GlobalSocketListener = () => {
                 offNotificationCountsUpdated();
             } else {
                 offBookingStatusChanged();
-                offUserWarning(); // On nettoie
+                offUserWarning();
             }
             disconnectSocket();
         };
     }, [token, user, dispatch, navigate, location]);
 
-    // Ce composant retourne maintenant le toast spécial s'il y a un message
-    return (
-        <SpecialWarning 
-            message={warningMessage}
-            onClose={() => setWarningMessage(null)}
-        />
-    );
+    // ✅ Ce composant n'affiche plus rien, il ne fait qu'écouter.
+    return null;
 };
 
 export default GlobalSocketListener;
