@@ -17,7 +17,8 @@ const style = {
     borderRadius: 2,
     boxShadow: 24,
     p: 3,
-    textAlign: 'center'
+    textAlign: 'center',
+    zIndex: 100000, // ✅ Z-index augmenté pour être au-dessus
 };
 
 // ✅ On ajoute la prop "onIconClick"
