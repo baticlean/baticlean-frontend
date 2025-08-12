@@ -5,10 +5,15 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// ✅ On importe le hook depuis le Context
+// --- IMPORTS POUR LA MISE À JOUR ---
 import { useVersion } from './context/VersionContext.jsx';
 import UpdateNotification from './components/UpdateNotification';
 
+// --- IMPORTS POUR L'AVERTISSEMENT PERSISTANT ---
+import GlobalSocketListener from './components/GlobalSocketListener.jsx';
+import SpecialWarning from './components/SpecialWarning.jsx';
+
+// --- IMPORTS DES PAGES ET COMPOSANTS ---
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -38,96 +43,100 @@ import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
 const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <PublicRoute />,
-    children: [
-      { index: true, element: <LandingPage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'temporary-lock', element: <TemporaryLockPage /> },
-      { path: 'forgot-password', element: <ForgotPasswordPage /> },
-      { path: 'reset-password/:token', element: <ResetPasswordPage /> },
-    ],
-  },
-  { path: "/privacy", element: <PrivacyPolicyPage /> },
-  { path: "/terms", element: <TermsPage /> },
-  {
-    path: '/',
-    element: <ProtectedRoute />,
-    children: [
-      { path: 'banned', element: <BannedPage /> },
-      { path: 'welcome', element: <LoginTransition /> },
-      {
-        element: <AuthStatusHandler />,
+    {
+        path: '/',
+        element: <PublicRoute />,
         children: [
-          {
-            element: <MainLayout />,
-            children: [
-              { path: "home", element: <HomePage /> },
-              { path: "profile", element: <ProfilePage /> },
-              { path: "my-bookings", element: <MyBookingsPage /> },
-              { path: "my-tickets", element: <UserTicketsPage /> },
-              { path: "support-chat", element: <SupportChatPage /> },
-              { path: "admin/dashboard", element: <AdminDashboardPage /> },
-              { path: "admin/users", element: <AdminUsersPage /> },
-              { path: "admin/services", element: <AdminServicesPage /> },
-              { path: "admin/tickets", element: <AdminTicketsPage /> },
-              { path: "admin/bookings", element: <AdminBookingsPage /> },
-              { path: "admin/reclamations", element: <AdminReclamationsPage /> },
-              { path: "admin/maintenance", element: <MaintenanceAdminPage /> },
-            ],
-          },
+            { index: true, element: <LandingPage /> },
+            { path: 'login', element: <LoginPage /> },
+            { path: 'register', element: <RegisterPage /> },
+            { path: 'temporary-lock', element: <TemporaryLockPage /> },
+            { path: 'forgot-password', element: <ForgotPasswordPage /> },
+            { path: 'reset-password/:token', element: <ResetPasswordPage /> },
         ],
-      },
-    ],
-  },
+    },
+    { path: "/privacy", element: <PrivacyPolicyPage /> },
+    { path: "/terms", element: <TermsPage /> },
+    {
+        path: '/',
+        element: <ProtectedRoute />,
+        children: [
+            { path: 'banned', element: <BannedPage /> },
+            { path: 'welcome', element: <LoginTransition /> },
+            {
+                element: <AuthStatusHandler />,
+                children: [
+                    {
+                        element: <MainLayout />,
+                        children: [
+                            { path: "home", element: <HomePage /> },
+                            { path: "profile", element: <ProfilePage /> },
+                            { path: "my-bookings", element: <MyBookingsPage /> },
+                            { path: "my-tickets", element: <UserTicketsPage /> },
+                            { path: "support-chat", element: <SupportChatPage /> },
+                            { path: "admin/dashboard", element: <AdminDashboardPage /> },
+                            { path: "admin/users", element: <AdminUsersPage /> },
+                            { path: "admin/services", element: <AdminServicesPage /> },
+                            { path: "admin/tickets", element: <AdminTicketsPage /> },
+                            { path: "admin/bookings", element: <AdminBookingsPage /> },
+                            { path: "admin/reclamations", element: <AdminReclamationsPage /> },
+                            { path: "admin/maintenance", element: <MaintenanceAdminPage /> },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
 ]);
 
 function AppWithVersionCheck() {
-  // ✅ On récupère les infos depuis le Context centralisé
-  const { versionInfo } = useVersion();
-  const [modalOpen, setModalOpen] = useState(false);
+    const { versionInfo } = useVersion();
+    const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (versionInfo.available) {
-      setModalOpen(true);
-    }
-  }, [versionInfo]);
+    useEffect(() => {
+        if (versionInfo.available) {
+            setModalOpen(true);
+        }
+    }, [versionInfo]);
 
-  const handleUpdate = () => {
-    window.location.reload(true);
-  };
+    const handleUpdate = () => {
+        window.location.reload(true);
+    };
 
-  return (
-    <>
-      <RouterProvider router={router} />
-      <ToastContainer
-        position="bottom-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={true}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
-      <CookieConsent />
-      
-      <UpdateNotification
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={handleUpdate}
-        versionInfo={versionInfo}
-      />
-    </>
-  );
+    return (
+        <>
+            <RouterProvider router={router} />
+            
+            {/* ✅ On place les composants globaux ici */}
+            <GlobalSocketListener />
+            <SpecialWarning />
+
+            <ToastContainer
+                position="bottom-right"
+                autoClose={4000}
+                hideProgressBar={false}
+                newestOnTop={true}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+            />
+            <CookieConsent />
+            
+            <UpdateNotification
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={handleUpdate}
+                versionInfo={versionInfo}
+            />
+        </>
+    );
 }
 
 function App() {
-  return <AppWithVersionCheck />;
+    return <AppWithVersionCheck />;
 }
 
 export default App;
