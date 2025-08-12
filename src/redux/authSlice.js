@@ -1,3 +1,4 @@
+// src/redux/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -9,36 +10,36 @@ const getUserFromToken = (token) => {
   try {
     return jwtDecode(token);
   } catch (error) {
+    console.error("Failed to decode token:", error);
     localStorage.removeItem('authToken');
     return null;
   }
 };
 
 export const loginUser = createAsyncThunk('auth/login', async (userData, { rejectWithValue }) => {
-    try {
-        const response = await axios.post(`${API_URL}/api/login`, userData);
-        localStorage.setItem('authToken', response.data.authToken);
-        return response.data;
-    } catch (error) {
-        if (error.response) {
-            const errorPayload = { 
-                message: error.response.data.message || 'Erreur de connexion', 
-                status: error.response.status,
-                authToken: error.response.data.authToken 
-            };
-            return rejectWithValue(errorPayload);
-        }
-        return rejectWithValue({ message: 'Erreur réseau ou serveur indisponible.' });
+  try {
+    const response = await axios.post(`${API_URL}/api/login`, userData);
+    return response.data; // Renvoie { authToken }
+  } catch (error) {
+    if (error.response) {
+      const errorPayload = {
+        message: error.response.data.message || 'Erreur de connexion',
+        status: error.response.status,
+        authToken: error.response.data.authToken, // Pour le cas 'banni'
+      };
+      return rejectWithValue(errorPayload);
     }
+    return rejectWithValue({ message: 'Erreur réseau ou serveur indisponible.' });
+  }
 });
 
 export const registerUser = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
-    try {
-        const response = await axios.post(`${API_URL}/api/register`, userData);
-        return response.data;
-    } catch (error) {
-        return rejectWithValue(error.response?.data?.message || "Erreur d'inscription");
-    }
+  try {
+    const response = await axios.post(`${API_URL}/api/register`, userData);
+    return response.data; // Renvoie { authToken, isNewUser }
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || "Erreur d'inscription");
+  }
 });
 
 const initialToken = localStorage.getItem('authToken') || null;
@@ -51,66 +52,76 @@ const authSlice = createSlice({
     loading: false,
     error: null,
     justReactivated: false,
+    isNewUser: false,
   },
   reducers: {
     logout: (state) => {
       localStorage.removeItem('authToken');
       state.user = null;
       state.token = null;
-      state.justReactivated = false;
+      state.loading = false;
       state.error = null;
+      state.justReactivated = false;
+      state.isNewUser = false;
     },
     updateUserFromSocket: (state, action) => {
-      const { user: updatedUser, newToken } = action.payload;
-      if (state.user && state.user._id === updatedUser._id) {
-        state.user = { ...state.user, ...updatedUser };
-        if (newToken) {
-          state.token = newToken;
-          localStorage.setItem('authToken', newToken);
-        }
+      const { user, newToken } = action.payload;
+      state.user = user;
+      if (newToken) {
+        state.token = newToken;
+        localStorage.setItem('authToken', newToken);
       }
     },
     setJustReactivated: (state, action) => {
       state.justReactivated = action.payload;
     },
     setToken: (state, action) => {
-      const token = action.payload;
-      state.token = token;
-      localStorage.setItem('authToken', token);
-      state.user = getUserFromToken(token);
-      state.justReactivated = false;
-      state.error = null;
-    },
+        state.token = action.payload;
+        state.user = getUserFromToken(action.payload);
+        localStorage.setItem('authToken', action.payload);
+    }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => { 
-        // ==========================================================
-        // LA CORRECTION EST ICI : CETTE LIGNE EST DÉSACTIVÉE
-        // state.loading = true; //
-        // ==========================================================
-        state.error = null; 
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.token = action.payload.authToken;
-        state.user = getUserFromToken(action.payload.authToken);
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload; 
-        if (action.payload.authToken) {
+      // Pending
+      .addMatcher(
+        (action) => [loginUser.pending, registerUser.pending].includes(action.type),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        }
+      )
+      // Rejected
+      .addMatcher(
+        (action) => [loginUser.rejected, registerUser.rejected].includes(action.type),
+        (state, action) => {
+          state.loading = false;
+          state.error = action.payload.message || action.payload;
+          // Gère le cas où un utilisateur banni reçoit un token pour voir la page 'banned'
+          if (action.payload?.authToken) {
             state.token = action.payload.authToken;
             state.user = getUserFromToken(action.payload.authToken);
+          }
         }
+      )
+      // Login Fulfilled
+      .addCase(loginUser.fulfilled, (state, action) => {
+        const { authToken } = action.payload;
+        localStorage.setItem('authToken', authToken);
+        state.loading = false;
+        state.token = authToken;
+        state.user = getUserFromToken(authToken);
+        state.isNewUser = false;
       })
-      .addCase(registerUser.pending, (state) => { 
-        // On le désactive aussi pour l'inscription par cohérence
-        // state.loading = true; //
-        state.error = null; 
-      })
-      .addCase(registerUser.fulfilled, (state) => { state.loading = false; })
-      .addCase(registerUser.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
+      // Register Fulfilled
+      .addCase(registerUser.fulfilled, (state, action) => {
+        const { authToken, isNewUser } = action.payload;
+        localStorage.setItem('authToken', authToken);
+        state.loading = false;
+        state.token = authToken;
+        state.user = getUserFromToken(authToken);
+        state.isNewUser = isNewUser;
+      });
   },
 });
 
