@@ -1,16 +1,19 @@
+// src/components/LoginTransition.jsx
+
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+// ✅ On retire useLocation qui n'est plus nécessaire ici
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import logo from '../assets/logo.png'; // Assurez-vous que le chemin est correct
+import logo from '../assets/logo.png';
 import './LoginTransition.css';
 
 function LoginTransition() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const { user } = useSelector((state) => state.auth);
-    const isNewUser = location.state?.isNewUser || false;
+    
+    // ✅ On récupère 'user' ET 'isNewUser' directement depuis le state Redux
+    const { user, isNewUser } = useSelector((state) => state.auth);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -28,7 +31,6 @@ function LoginTransition() {
                 transition={{ duration: 1.5, ease: "easeIn" }}
             />
             <Box className="text-container">
-                {/* 1. NOUVEAU: Conteneur pour le logo et la main */}
                 <motion.div
                     className="logo-container"
                     initial={{ opacity: 0, scale: 0.5 }}
@@ -43,7 +45,7 @@ function LoginTransition() {
                     <span className="waving-hand" role="img" aria-label="waving hand">🙋‍♂️</span>
                 </motion.div>
 
-                {/* 2. Message de bienvenue conditionnel */}
+                {/* Ce bloc fonctionnera maintenant correctement */}
                 {isNewUser ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -66,7 +68,6 @@ function LoginTransition() {
                     </motion.div>
                 )}
 
-                {/* 3. Nom de l'utilisateur (commun aux deux) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -77,9 +78,8 @@ function LoginTransition() {
                     </Typography>
                 </motion.div>
                 
-                {/* 4. Message d'aventure (uniquement pour les nouveaux) */}
                  {isNewUser && (
-                     <motion.div
+                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 2.4 }}
