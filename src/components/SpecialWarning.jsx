@@ -82,7 +82,7 @@ function SpecialWarning() {
         )}
         
         <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.8, fontSize: '0.9rem' }}>
-          Cette notification restera visible jusqu'à ce qu'une action soit prise.
+          Cette notification restera visible jusqu'à ce que vous cliquez sur "Fermer". Nous vous conseillons de contacter l'assistance. Vous pouvez aussi envoyez une vérification de profil
         </Typography>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>

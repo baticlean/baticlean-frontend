@@ -9,7 +9,7 @@ import {
 // On définit les actions possibles ici pour les réutiliser facilement
 const AVAILABLE_ACTIONS = [
     { label: "Contacter le support", type: "contact_support" },
-    { label: "Vérifier les informations du profil", type: "review_profile" },
+    { label: "Vérifier Mon Profil", type: "review_profile" },
     // On pourra en ajouter d'autres plus tard
 ];
 
