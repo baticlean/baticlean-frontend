@@ -69,6 +69,12 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
             primary="Correctifs" 
             secondary="Amélioration de la stabilité et des performances."
           />
+            <InfoPoint 
+            icon={<InfoOutlinedIcon color="action" />}
+            primary="Conseils" 
+            secondary="Vous pourrez toujours mettre à jour en cliquant sur 'Mise à jour' depuis votre photo de proifil."
+
+          />
         </List>
       </DialogContent>
       {/* ✅ Boutons plus petits et empilés sur mobile si nécessaire */}

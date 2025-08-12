@@ -1,3 +1,5 @@
+// src/main.jsx
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
@@ -10,12 +12,18 @@ import { store } from './redux/store.js';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/index.js'; // Importer notre thème personnalisé
 
+// ✅ On importe notre nouveau Provider de version
+import { VersionProvider } from './context/VersionContext.jsx';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
       <ThemeProvider theme={theme}>
-        <CssBaseline /> {/* Normalise le style sur tous les navigateurs */}
-        <App />
+        <CssBaseline />
+        {/* ✅ On enroule l'application dans le VersionProvider */}
+        <VersionProvider>
+          <App />
+        </VersionProvider>
       </ThemeProvider>
     </Provider>
   </React.StrictMode>,

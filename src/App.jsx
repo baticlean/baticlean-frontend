@@ -5,10 +5,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// --- IMPORTS POUR LA NOTIFICATION DE MISE À JOUR ---
-import { useVersionCheck } from './hooks/useVersionCheck';
+// ✅ On importe le hook depuis le Context
+import { useVersion } from './context/VersionContext.jsx';
 import UpdateNotification from './components/UpdateNotification';
-// --- FIN DES IMPORTS ---
 
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -86,7 +85,8 @@ const router = createBrowserRouter([
 ]);
 
 function AppWithVersionCheck() {
-  const versionInfo = useVersionCheck();
+  // ✅ On récupère les infos depuis le Context centralisé
+  const { versionInfo } = useVersion();
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -120,7 +120,7 @@ function AppWithVersionCheck() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleUpdate}
-        versionInfo={versionInfo} // On passe bien l'objet complet
+        versionInfo={versionInfo}
       />
     </>
   );

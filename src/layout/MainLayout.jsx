@@ -9,7 +9,7 @@ import { fetchUserTickets } from '../redux/ticketSlice.js';
 import { fetchUnreadBookingCount, markUserBookingsAsRead, resetUnreadBookingCount } from '../redux/bookingSlice.js';
 import {
     AppBar, Toolbar, Typography, Box, Button, Fab,
-    IconButton, Menu, MenuItem, Avatar, Badge
+    IconButton, Menu, MenuItem, Avatar, Badge, Divider
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -23,12 +23,18 @@ import Footer from '../components/Footer.jsx';
 import AdminMenuModal from '../components/AdminMenuModal.jsx';
 import logo from '../assets/logo.png';
 
+// ✅ 1. On importe le hook du Context
+import { useVersion } from '../context/VersionContext.jsx';
+
 function MainLayout() {
     const { user } = useSelector((state) => state.auth);
     const { counts, hasNewTicketUpdate } = useSelector((state) => state.notifications);
     const { userTickets } = useSelector((state) => state.tickets);
     const { unreadCount: unreadBookingCount } = useSelector((state) => state.bookings);
     
+    // ✅ 2. On récupère la fonction de vérification manuelle
+    const { manualCheckForUpdate } = useVersion();
+
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -106,6 +112,12 @@ function MainLayout() {
         navigate('/my-tickets');
     };
 
+    // ✅ 3. On crée la fonction pour le clic sur le nouveau bouton
+    const handleCheckUpdateClick = () => {
+        handleClose(); // On ferme le menu
+        manualCheckForUpdate(); // On lance la vérification manuelle
+    };
+
     const unreadTicketCount = userTickets?.filter(ticket => !ticket.isReadByUser).length || 0;
 
     const totalAdminNotifications = useMemo(() => {
@@ -128,13 +140,11 @@ function MainLayout() {
                                 ease: "linear"
                             }}
                         >
-                            {/* ✅ Logo plus petit sur mobile */}
                             <Avatar 
                                 src={logo} 
                                 alt="Logo BATIClean"
                                 sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 }, mb: 0.5 }}
                             />
-                            {/* ✅ Texte du logo masqué sur mobile pour gagner de la place */}
                             <Typography variant="caption" sx={{ fontSize: '0.65rem', lineHeight: 1, display: { xs: 'none', sm: 'block' } }}>
                                 BATIClean
                             </Typography>
@@ -142,7 +152,6 @@ function MainLayout() {
                         
                         <Box sx={{ flexGrow: 1 }} />
 
-                        {/* ✅ Conteneur d'icônes avec espacement réduit sur mobile */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                             {(user?.role === 'admin' || user?.role === 'superAdmin') && (
                                 <IconButton color="inherit" onClick={() => setAdminMenuOpen(true)}>
@@ -187,7 +196,6 @@ function MainLayout() {
                                     overlap="circular" 
                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 >
-                                    {/* ✅ Avatar plus petit sur mobile */}
                                     <Avatar src={user?.profilePicture} alt={user?.username} sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}/>
                                 </Badge>
                             </IconButton>
@@ -203,13 +211,18 @@ function MainLayout() {
                                 <MenuItem component={RouterLink} to="/profile" onClick={handleClose}>Profil</MenuItem>
                                 <MenuItem component={RouterLink} to="/my-bookings" onClick={handleClose}>Mes Réservations</MenuItem>
                                 <MenuItem component={RouterLink} to="/my-tickets" onClick={handleClose}>Mes Tickets</MenuItem>
+                                
+                                {/* ✅ 4. On ajoute le bouton et la séparation dans le menu */}
+                                <Divider sx={{ my: 0.5 }} />
+                                <MenuItem onClick={handleCheckUpdateClick}>Mises à jour</MenuItem>
+                                <Divider sx={{ my: 0.5 }} />
+
                                 <MenuItem onClick={handleLogout}>Déconnexion</MenuItem>
                             </Menu>
                         </Box>
                     </Toolbar>
                 </AppBar>
                 
-                {/* ✅ On ajoute un grand padding en bas (pb) sur mobile pour que le contenu ne soit pas caché par les boutons flottants */}
                 <Box component="main" sx={{ flexGrow: 1, p: { xs: 1.5, sm: 3 }, pb: { xs: 15, sm: 3 } }} key={location.pathname}>
                     <Outlet/>
                 </Box>
