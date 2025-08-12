@@ -1,4 +1,4 @@
-// src/components/AdminMenuModal.jsx
+// src/components/AdminMenuModal.jsx (Version Ultra-Robuste)
 
 import React from 'react';
 import { Modal, Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Badge, IconButton } from '@mui/material';
@@ -14,7 +14,7 @@ const style = {
   maxWidth: 400,
   bgcolor: 'background.paper',
   boxShadow: 24,
-  p: { xs: 2, sm: 3 }, // Padding responsif
+  p: 2,
   borderRadius: 2,
 };
 
@@ -31,7 +31,6 @@ function AdminMenuModal({ open, onClose, counts, handleNavClick }) {
     ];
 
     const onMenuItemClick = (path, type) => {
-        // La logique existante est correcte
         if (type !== 'services' && type !== 'dashboard') {
             handleNavClick(type);
         }
@@ -42,16 +41,14 @@ function AdminMenuModal({ open, onClose, counts, handleNavClick }) {
     return (
         <Modal open={open} onClose={onClose}>
             <Box sx={style}>
-                {/* ✅ BONUS : Ajout d'un bouton pour fermer la modale, essentiel pour l'UX */}
                 <IconButton onClick={onClose} sx={{ position: 'absolute', top: 8, right: 8 }}>
                     <CloseIcon />
                 </IconButton>
-
                 <Typography variant="h6" sx={{ mb: 2 }}>Menu Administrateur</Typography>
                 <List>
                     {menuItems.map((item) => {
-                        // ✅ LA CORRECTION CLÉ EST ICI : On utilise `counts?.`
-                        // Si `counts` est null ou undefined, l'expression renvoie 0 sans planter.
+                        // ✅ LA CORRECTION CLÉ EST ICI : On utilise `counts?.` (optional chaining)
+                        // Si `counts` est null, l'expression renvoie 0 sans planter.
                         const count = counts?.[item.type] ?? 0;
 
                         return (
