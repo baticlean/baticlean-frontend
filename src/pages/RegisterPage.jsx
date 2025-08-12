@@ -1,4 +1,4 @@
-// src/pages/RegisterPage.jsx (Corrigé et Simplifié)
+// src/pages/RegisterPage.jsx (Version finale et correcte)
 
 import React, { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Grid, Link, IconButton, InputAdornment } from '@mui/material';
@@ -6,7 +6,6 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-// ✅ On n'a plus besoin d'importer loginUser ici
 import { registerUser } from '../redux/authSlice.js';
 import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input/min';
 import 'react-phone-number-input/style.css';
@@ -26,11 +25,11 @@ function RegisterPage() {
         setFormData({ ...formData, [name]: value });
     };
 
-    // ✅✅✅ LOGIQUE SIMPLIFIÉE ✅✅✅
+    // ✅ LOGIQUE SIMPLIFIÉE QUI CORRESPOND AU BACKEND
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validations (inchangées)
+        // Validations
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         if (!emailRegex.test(formData.email)) {
             toast.error("Veuillez entrer une adresse email valide.");
@@ -44,7 +43,7 @@ function RegisterPage() {
         const finalFormData = { ...formData, phoneNumber };
         setLoading(true);
 
-        // On lance l'inscription. Le backend nous connectera automatiquement.
+        // On ne fait plus qu'UN SEUL appel. Le backend s'occupe de la connexion.
         dispatch(registerUser(finalFormData))
             .unwrap()
             .then(() => {
@@ -53,9 +52,11 @@ function RegisterPage() {
                 navigate('/welcome');
             })
             .catch((error) => {
+                // La gestion d'erreur reste la même
                 toast.error(error || "Une erreur est survenue lors de l'inscription.");
             })
             .finally(() => {
+                // On arrête toujours le chargement à la fin
                 setLoading(false);
             });
     };
@@ -63,12 +64,85 @@ function RegisterPage() {
     return (
         <>
             <FullScreenLoader open={loading} message="Finalisation de l'inscription..." />
-            {/* Le reste de ton JSX reste identique et n'a pas besoin de changer */}
+
             <Container component="main" maxWidth="xs">
-              {/* ... ton formulaire ... */}
+                <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Typography component="h1" variant="h5">Inscription</Typography>
+                    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <TextField name="username" required fullWidth label="Nom d'utilisateur" value={formData.username} onChange={handleChange} disabled={loading}/>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField name="email" type="email" required fullWidth label="Adresse Email" value={formData.email} onChange={handleChange} disabled={loading}/>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <PhoneInput
+                                    placeholder="Numéro de téléphone"
+                                    value={phoneNumber}
+                                    onChange={setPhoneNumber}
+                                    defaultCountry="CI"
+                                    international
+                                    countryCallingCodeEditable={true}
+                                    className="phone-input-container"
+                                    disabled={loading}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    name="password"
+                                    required
+                                    fullWidth
+                                    label="Mot de passe"
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    helperText="Doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+                                    disabled={loading}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" disabled={loading}>
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Grid>
+                        </Grid>
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 1 }}
+                            disabled={loading || (phoneNumber ? !isPossiblePhoneNumber(phoneNumber) : true)}
+                        >
+                            S'inscrire
+                        </Button>
+                        <Button
+                            type="button"
+                            fullWidth
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                            onClick={() => navigate(-1)}
+                            startIcon={<ArrowBackIcon />}
+                            disabled={loading}
+                        >
+                            Retour
+                        </Button>
+                        <Grid container justifyContent="flex-end">
+                            <Grid item>
+                                <Link component={RouterLink} to="/login" variant="body2">
+                                    Déjà un compte ? Connectez-vous
+                                </Link>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </Box>
             </Container>
         </>
     );
 }
 
-export default RegisterPage; 
+export default RegisterPage;
