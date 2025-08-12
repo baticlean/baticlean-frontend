@@ -1,10 +1,17 @@
-import React from 'react';
+// src/pages/TermsPage.jsx
+
+import React, { useEffect } from 'react'; // ✅ 1. On importe useEffect
 import { Container, Typography, Box, Paper, List, ListItem, ListItemText, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 
 function TermsPage() {
   const navigate = useNavigate();
+
+  // ✅ 2. On ajoute ce bloc pour le scroll automatique
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 } }}>

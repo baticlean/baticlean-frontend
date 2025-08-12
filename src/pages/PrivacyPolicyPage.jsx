@@ -1,10 +1,18 @@
-import React from 'react';
+// src/pages/PrivacyPolicyPage.jsx
+
+import React, { useEffect } from 'react'; // ✅ 1. On importe useEffect
 import { Container, Typography, Box, Paper, List, ListItem, ListItemText, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 
 function PrivacyPolicyPage() {
   const navigate = useNavigate();
+
+  // ✅ 2. On ajoute ce bloc de code
+  // Il s'exécute une seule fois, dès que la page s'affiche.
+  useEffect(() => {
+    window.scrollTo(0, 0); // Fait remonter la fenêtre tout en haut
+  }, []); // Le tableau vide signifie "ne s'exécute qu'une seule fois"
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 } }}>
