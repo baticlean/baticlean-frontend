@@ -24,9 +24,8 @@ function SpecialWarning() {
 
   const currentWarning = warnings?.[0];
 
-  // ✅ DÉBUT DES FONCTIONS RESTAURÉES
   const handleDismiss = () => {
-    if (!currentWarning) return; // Sécurité
+    if (!currentWarning) return;
     dispatch(dismissWarning(currentWarning._id))
       .unwrap()
       .catch(() => {
@@ -35,17 +34,11 @@ function SpecialWarning() {
   };
 
   const handleActionClick = (actionType) => {
-    if (!currentWarning) return; // Sécurité
-
     if (actionType === 'contact_support') {
       setContactModalOpen(true);
     }
-    // D'autres actions pourraient être gérées ici
-
-    // Comme demandé, cliquer sur le bouton d'action ferme aussi l'avertissement
-    handleDismiss();
+    // On ne ferme plus l'avertissement ici.
   };
-  // ✅ FIN DES FONCTIONS RESTAURÉES
 
   if (!currentWarning) {
     return null;
@@ -86,19 +79,23 @@ function SpecialWarning() {
             </Typography>
         </Box>
         
-        {isLongMessage && (
-            <Button 
-                size="small" 
-                onClick={() => setIsExpanded(!isExpanded)}
-                sx={{ color: 'white', textDecoration: 'underline', mb: 2 }}
-            >
-                {isExpanded ? 'Voir moins' : 'Voir plus'}
-            </Button>
-        )}
-        
-        <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.8, fontSize: '0.9rem' }}>
-          Cette notification restera visible jusqu'à ce que vous cliquez sur "Fermer". Nous vouis conseillons de contacter l'assistance. Vous pouvez aussi envoyer une vérification de profil. 
-        </Typography>
+        {/* ✅ CORRECTIF DE STYLE : On met le bouton et le texte dans des conteneurs séparés */}
+        <Box>
+            {isLongMessage && (
+                <Button 
+                    size="small" 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    sx={{ color: 'white', textDecoration: 'underline', mb: 1, p: 0.5, display: 'inline-block' }}
+                >
+                    {isExpanded ? 'Voir moins' : 'Voir plus'}
+                </Button>
+            )}
+        </Box>
+        <Box>
+            <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.8, fontSize: '0.9rem' }}>
+              Cette notification restera visible jusqu'à ce qu'une action soit prise.
+            </Typography>
+        </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
           {currentWarning.actions?.map(action => (
@@ -116,7 +113,13 @@ function SpecialWarning() {
           </Button>
         </Box>
       </Paper>
-      <ContactSupportModal open={contactModalOpen} onClose={() => setContactModalOpen(false)} />
+      
+      {/* ✅ CORRECTIF DE LOGIQUE : On passe la fonction "handleDismiss" à la modale de contact */}
+      <ContactSupportModal 
+        open={contactModalOpen} 
+        onClose={() => setContactModalOpen(false)}
+        onIconClick={handleDismiss}
+      />
     </>
   );
 }
