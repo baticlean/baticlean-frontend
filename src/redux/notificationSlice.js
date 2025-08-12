@@ -1,11 +1,10 @@
-// src/redux/notificationSlice.js (Version Ultra-Robuste)
+// frontend/src/redux/notificationSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Thunk pour récupérer les compteurs de notifications
 export const fetchNotificationCounts = createAsyncThunk(
   'notifications/fetchCounts',
   async (_, { getState, rejectWithValue }) => {
@@ -20,7 +19,6 @@ export const fetchNotificationCounts = createAsyncThunk(
   }
 );
 
-// Thunk pour marquer un type de notification comme lu
 export const markTypeAsRead = createAsyncThunk(
   'notifications/markTypeAsRead',
   async (type, { getState, rejectWithValue }) => {
@@ -28,7 +26,7 @@ export const markTypeAsRead = createAsyncThunk(
       const { token } = getState().auth;
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.patch(`${API_URL}/api/notifications/${type}/mark-as-read`, null, config);
-      return type; // On renvoie le type qui a été marqué comme lu
+      return type; 
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);
     }
@@ -38,17 +36,17 @@ export const markTypeAsRead = createAsyncThunk(
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState: {
-    // ✅ On s'assure que counts est TOUJOURS un objet
-    counts: {},
-    hasNewTicketUpdate: false,
+    counts: { users: 0, tickets: 0, bookings: 0, reclamations: 0 },
+    // NOUVEL ÉTAT : pour gérer le point rouge sur la cloche du client
+    hasNewTicketUpdate: false, 
     loading: false,
     error: null,
   },
   reducers: {
     setCounts: (state, action) => {
-      // ✅ SÉCURITÉ : Si on reçoit null, on le transforme en objet vide
-      state.counts = action.payload || {};
+      state.counts = action.payload;
     },
+    // NOUVELLE ACTION : pour allumer ou éteindre le point rouge
     setNewTicketUpdate: (state, action) => {
       state.hasNewTicketUpdate = action.payload;
     },
@@ -56,13 +54,11 @@ const notificationSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchNotificationCounts.fulfilled, (state, action) => {
-        // ✅ SÉCURITÉ : On s'assure que counts est toujours un objet
-        state.counts = action.payload || {};
+        state.counts = action.payload;
       })
       .addCase(markTypeAsRead.fulfilled, (state, action) => {
         const type = action.payload;
-        // ✅ SÉCURITÉ : On vérifie que counts existe avant de le modifier
-        if (state.counts) {
+        if (state.counts.hasOwnProperty(type)) {
           state.counts[type] = 0;
         }
       });
