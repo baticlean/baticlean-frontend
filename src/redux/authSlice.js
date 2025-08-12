@@ -79,14 +79,18 @@ const authSlice = createSlice({
             state.error = null;
         },
 
-        // ✅ LA CORRECTION DÉFINITIVE EST ICI
+        // ✅ LA CORRECTION DÉFINITIVE ET ROBUSTE EST ICI
         updateUserFromSocket: (state, action) => {
             if (state.user && action.payload.user && action.payload.user._id === state.user._id) {
                 const updatedUserData = action.payload.user;
 
-                // On fusionne les données de manière sûre pour ne rien écraser.
-                // Object.assign fusionne les propriétés à la racine de l'objet.
-                Object.assign(state.user, updatedUserData);
+                // On fusionne les données en préservant explicitement le tableau 'warnings'
+                // s'il n'est pas dans la mise à jour, pour éviter qu'il soit effacé.
+                state.user = {
+                    ...state.user,
+                    ...updatedUserData,
+                    warnings: updatedUserData.warnings || state.user.warnings || []
+                };
 
                 // La logique du token reste la même
                 if (action.payload.newToken) {
