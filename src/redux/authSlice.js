@@ -6,10 +6,17 @@ import { jwtDecode } from 'jwt-decode';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// ✅ LA CORRECTION EST ICI
 const getUserFromToken = (token) => {
     if (!token) return null;
     try {
-        return jwtDecode(token);
+        const decodedUser = jwtDecode(token);
+        // On s'assure que le tableau 'warnings' existe toujours, même sur un ancien token.
+        // S'il n'existe pas, on l'initialise comme un tableau vide.
+        if (!decodedUser.warnings) {
+            decodedUser.warnings = [];
+        }
+        return decodedUser;
     } catch (error) {
         localStorage.removeItem('authToken');
         return null;
@@ -78,28 +85,20 @@ const authSlice = createSlice({
             state.isNewUser = false;
             state.error = null;
         },
-
-        // ✅ LA CORRECTION DÉFINITIVE ET ROBUSTE EST ICI
         updateUserFromSocket: (state, action) => {
             if (state.user && action.payload.user && action.payload.user._id === state.user._id) {
                 const updatedUserData = action.payload.user;
-
-                // On fusionne les données en préservant explicitement le tableau 'warnings'
-                // s'il n'est pas dans la mise à jour, pour éviter qu'il soit effacé.
                 state.user = {
                     ...state.user,
                     ...updatedUserData,
                     warnings: updatedUserData.warnings || state.user.warnings || []
                 };
-
-                // La logique du token reste la même
                 if (action.payload.newToken) {
                     state.token = action.payload.newToken;
                     localStorage.setItem('authToken', action.payload.newToken);
                 }
             }
         },
-
         setJustReactivated: (state, action) => {
             state.justReactivated = action.payload;
         },
