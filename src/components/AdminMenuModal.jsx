@@ -1,9 +1,9 @@
 // src/components/AdminMenuModal.jsx
 
 import React from 'react';
-import { Modal, Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Badge } from '@mui/material';
-import { PeopleAlt, DesignServices, Message, BookOnline, Report, Dashboard } from '@mui/icons-material';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { Modal, Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Badge, IconButton } from '@mui/material';
+import { PeopleAlt, DesignServices, Message, BookOnline, Report, Dashboard, Close as CloseIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 const style = {
   position: 'absolute',
@@ -14,7 +14,7 @@ const style = {
   maxWidth: 400,
   bgcolor: 'background.paper',
   boxShadow: 24,
-  p: 2,
+  p: { xs: 2, sm: 3 }, // Padding responsif
   borderRadius: 2,
 };
 
@@ -31,7 +31,8 @@ function AdminMenuModal({ open, onClose, counts, handleNavClick }) {
     ];
 
     const onMenuItemClick = (path, type) => {
-        if (type !== 'services' && type !== 'dashboard') { // Le tableau de bord et les services n'ont pas de compteur
+        // La logique existante est correcte
+        if (type !== 'services' && type !== 'dashboard') {
             handleNavClick(type);
         }
         navigate(path);
@@ -41,20 +42,31 @@ function AdminMenuModal({ open, onClose, counts, handleNavClick }) {
     return (
         <Modal open={open} onClose={onClose}>
             <Box sx={style}>
+                {/* ✅ BONUS : Ajout d'un bouton pour fermer la modale, essentiel pour l'UX */}
+                <IconButton onClick={onClose} sx={{ position: 'absolute', top: 8, right: 8 }}>
+                    <CloseIcon />
+                </IconButton>
+
                 <Typography variant="h6" sx={{ mb: 2 }}>Menu Administrateur</Typography>
                 <List>
-                    {menuItems.map((item) => (
-                        <ListItem key={item.text} disablePadding>
-                            <ListItemButton onClick={() => onMenuItemClick(item.path, item.type)}>
-                                <ListItemIcon>
-                                    <Badge badgeContent={counts[item.type] || 0} color="error">
-                                        {item.icon}
-                                    </Badge>
-                                </ListItemIcon>
-                                <ListItemText primary={item.text} />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
+                    {menuItems.map((item) => {
+                        // ✅ LA CORRECTION CLÉ EST ICI : On utilise `counts?.`
+                        // Si `counts` est null ou undefined, l'expression renvoie 0 sans planter.
+                        const count = counts?.[item.type] ?? 0;
+
+                        return (
+                            <ListItem key={item.text} disablePadding>
+                                <ListItemButton onClick={() => onMenuItemClick(item.path, item.type)}>
+                                    <ListItemIcon>
+                                        <Badge badgeContent={count} color="error">
+                                            {item.icon}
+                                        </Badge>
+                                    </ListItemIcon>
+                                    <ListItemText primary={item.text} />
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
                 </List>
             </Box>
         </Modal>
