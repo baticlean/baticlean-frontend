@@ -11,7 +11,7 @@ export const useVersion = () => useContext(VersionContext);
 // On crée le "Provider" qui contiendra toute notre logique
 export function VersionProvider({ children }) {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
-  const POLLING_INTERVAL = 2 * 60 * 1000; // 2 minutes
+  const POLLING_INTERVAL = 1 * 60 * 1000; // 1 minutes
 
   const performCheck = useCallback(async () => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;

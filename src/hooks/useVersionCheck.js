@@ -1,55 +1,38 @@
-// src/context/VersionContext.jsx
+// src/hooks/useVersionCheck.js
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { toast } from 'react-toastify'; // Assure-toi que toast est importé
+import { useState, useEffect } from 'react';
 
-const VersionContext = createContext();
+const POLLING_INTERVAL = 1 * 60 * 1000; // 1minutes
 
-export const useVersion = () => useContext(VersionContext);
-
-export function VersionProvider({ children }) {
+export function useVersionCheck() {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
-  const POLLING_INTERVAL = 1 * 60 * 1000;
-
-  const performCheck = useCallback(async () => {
-    const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
-    if (!currentVersion) return false;
-
-    try {
-      const url = `/meta.json?t=${new Date().getTime()}`;
-      const response = await fetch(url, { cache: 'no-store' });
-      const meta = await response.json();
-
-      if (meta.fullVersion !== currentVersion) {
-        setVersionInfo({ available: true, ...meta });
-        return true; // Mise à jour trouvée
-      }
-    } catch (error) {
-      console.error("Erreur lors de la vérification de la version :", error);
-    }
-    return false; // Pas de mise à jour
-  }, []);
 
   useEffect(() => {
-    const interval = setInterval(performCheck, POLLING_INTERVAL);
-    return () => clearInterval(interval);
-  }, [performCheck]);
-
-  const manualCheckForUpdate = async () => {
-    const updateFound = await performCheck();
-    if (!updateFound) {
-      toast.success("Vous utilisez déjà la version la dernière version de BATICLean !");
+    const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
+    
+    if (!currentVersion) {
+      console.warn("La balise meta 'app-version' est introuvable.");
+      return;
     }
-  };
 
-  const value = {
-    versionInfo,
-    manualCheckForUpdate,
-  };
+    const interval = setInterval(() => {
+      const url = `/meta.json?t=${new Date().getTime()}`;
 
-  return (
-    <VersionContext.Provider value={value}>
-      {children}
-    </VersionContext.Provider>
-  );
+      fetch(url, { cache: 'no-store' })
+        .then(res => res.json())
+        .then(meta => {
+          // ✅ La logique de détection utilise toujours la version complète et robuste
+          if (meta.fullVersion !== currentVersion) {
+            // ✅ Mais on ne stocke que la version destinée à l'affichage
+            setVersionInfo({ available: true, displayVersion: meta.displayVersion });
+            clearInterval(interval); 
+          }
+        })
+        .catch(err => console.error("Erreur lors de la vérification de la version :", err));
+    }, POLLING_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return versionInfo;
 }
