@@ -1,4 +1,4 @@
-// src/pages/SupportChatPage.jsx (Version Intelligente)
+// src/pages/SupportChatPage.jsx (Version Intelligente et Corrigée)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, TextField, IconButton, Paper, Typography, List, ListItem, Button, CircularProgress } from '@mui/material';
@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { createTicket } from '../redux/ticketSlice.js';
 import { toast } from 'react-toastify';
 import TicketCreatedNotice from '../components/TicketCreatedNotice.jsx';
-import axios from 'axios'; // On importe axios
+import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,7 +17,7 @@ function SupportChatPage() {
     ]);
     const [input, setInput] = useState('');
     const [ticketCreated, setTicketCreated] = useState(false);
-    const [isBotTyping, setIsBotTyping] = useState(false); // Pour l'indicateur "écrit..."
+    const [isBotTyping, setIsBotTyping] = useState(false);
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
     const dispatch = useDispatch();
@@ -38,19 +38,21 @@ function SupportChatPage() {
     const handleSend = async (e) => {
         e.preventDefault();
         if (input.trim() && !isBotTyping) {
+            // On retire le bouton "créer un ticket" des messages précédents
+            const cleanedMessages = messages.map(msg => ({ ...msg, showCreateTicket: false }));
             const userMessage = { sender: 'user', text: input };
-            const newMessages = [...messages, userMessage];
+            const newMessages = [...cleanedMessages, userMessage];
+
             setMessages(newMessages);
             setInput('');
             setIsBotTyping(true);
 
             try {
-                // ✅ On appelle notre nouveau backend intelligent
                 const response = await axios.post(
                     `${API_URL}/api/chatbot/ask`,
                     {
                         message: input,
-                        history: messages // On envoie l'historique pour le contexte
+                        history: newMessages.slice(1) // On envoie l'historique sans le message de bienvenue
                     },
                     {
                         headers: { Authorization: `Bearer ${token}` }
@@ -59,7 +61,6 @@ function SupportChatPage() {
                 
                 const botResponse = { sender: 'bot', text: response.data.reply };
                 
-                // On regarde si la réponse du bot suggère de créer un ticket
                 if (response.data.reply.toLowerCase().includes('ticket')) {
                     botResponse.showCreateTicket = true;
                 }
@@ -76,8 +77,26 @@ function SupportChatPage() {
         }
     };
 
-    const handleCreateTicket = () => { /* ... (cette fonction ne change pas) */ };
-    if (ticketCreated) { return <TicketCreatedNotice />; }
+    // ✅ LA LOGIQUE DE CETTE FONCTION EST MAINTENANT RESTAURÉE
+    const handleCreateTicket = () => {
+        // On retire le bouton du dernier message pour qu'il ne soit pas inclus dans le ticket
+        const cleanedMessages = messages.map(msg => ({ ...msg, showCreateTicket: false }));
+        
+        toast.promise(
+            dispatch(createTicket({ messages: cleanedMessages })).unwrap(),
+            {
+                pending: 'Création du ticket...',
+                success: 'Ticket créé avec succès ! Notre équipe vous répondra bientôt.',
+                error: 'Erreur lors de la création du ticket.'
+            }
+        ).then(() => {
+            setTicketCreated(true);
+        });
+    };
+
+    if (ticketCreated) {
+        return <TicketCreatedNotice />;
+    }
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: { xs: 'calc(100vh - 140px)', sm: 'calc(100vh - 120px)' }, p: { xs: 1.5, sm: 2 } }}>
@@ -96,7 +115,6 @@ function SupportChatPage() {
                             )}
                         </ListItem>
                     ))}
-                    {/* ✅ On affiche un indicateur quand le bot "réfléchit" */}
                     {isBotTyping && (
                         <ListItem sx={{ alignItems: 'flex-start' }}>
                             <CircularProgress size={20} />
@@ -115,4 +133,4 @@ function SupportChatPage() {
     );
 }
 
-export default SupportChatPage; 
+export default SupportChatPage;
