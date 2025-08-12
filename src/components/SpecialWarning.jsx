@@ -5,9 +5,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import ContactSupportModal from './ContactSupportModal.jsx'; // Assurez-vous d'utiliser la version avec <Dialog>
+import ContactSupportModal from './ContactSupportModal.jsx';
 import { dismissWarning } from '../redux/warningSlice.js';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toastify'; // Déjà importé, c'est parfait
 
 const pulseAnimation = keyframes`
   0% { transform: scale(1.0); }
@@ -33,9 +33,15 @@ function SpecialWarning() {
             });
     };
 
+    // ✅ MODIFICATION ICI : On ajoute la logique pour la vérification de profil
     const handleActionClick = (actionType) => {
         if (actionType === 'contact_support') {
             setContactModalOpen(true);
+        } else if (actionType === 'verify_profile') { // Assurez-vous que ce type correspond à votre action
+            // 1. Affiche le toast de succès
+            toast.success("Profil vérifié avec succès. Faites plus attention !");
+            // 2. Ferme l'avertissement
+            handleDismiss();
         }
     };
 
@@ -65,8 +71,7 @@ function SpecialWarning() {
                     color: 'white',
                     p: 2.5,
                     borderRadius: 2,
-                    // ✅ LA CORRECTION EST ICI : zIndex inférieur à 1300 (z-index des modales MUI)
-                    zIndex: 1250, 
+                    zIndex: 1250,
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, textAlign: 'left', mb: 2 }}>
