@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const POLLING_INTERVAL = 2 * 60 * 1000; // 2 minutes
+const POLLING_INTERVAL = 1 * 60 * 1000; // 1 minutes
 
 export function useVersionCheck() {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
