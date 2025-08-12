@@ -115,4 +115,4 @@ function SupportChatPage() {
     );
 }
 
-export default SupportChatPage;
+export default SupportChatPage; 
