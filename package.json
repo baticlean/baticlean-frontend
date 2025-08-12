@@ -1,7 +1,7 @@
 {
   "name": "baticlean-frontend",
   "private": true,
-  "version": "1.0.0.0.01",
+  "version": "1.0.0.0.00.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
