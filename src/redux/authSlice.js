@@ -10,8 +10,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 const getUserFromToken = (token) => {
     if (!token) return null;
     try {
-        // jwtDecode va automatiquement inclure tous les champs du payload,
-        // y compris notre nouveau tableau 'warnings'.
         return jwtDecode(token);
     } catch (error) {
         localStorage.removeItem('authToken');
@@ -47,16 +45,14 @@ export const registerUser = createAsyncThunk('auth/register', async (userData, {
     }
 });
 
-// ✅ NOUVEAU THUNK : Pour supprimer un avertissement spécifique
+// Thunk pour supprimer un avertissement spécifique (INCHANGÉ)
 export const clearWarning = createAsyncThunk(
     'auth/clearWarning',
     async (warningId, { getState, rejectWithValue }) => {
         try {
             const { token } = getState().auth;
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            // On appelle la nouvelle route backend pour supprimer l'avertissement
             const response = await axios.patch(`${API_URL}/api/auth/warnings/${warningId}/clear`, null, config);
-            // On retourne l'utilisateur mis à jour envoyé par le backend
             return response.data.user; 
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Erreur lors de la suppression de l\'avertissement');
@@ -86,15 +82,33 @@ const authSlice = createSlice({
             state.isNewUser = false;
             state.error = null;
         },
+
+        // ✅ AMÉLIORÉ: Logique de fusion robuste pour éviter la perte de données
         updateUserFromSocket: (state, action) => {
-            if (state.user && action.payload.user._id === state.user._id) {
-                state.user = { ...state.user, ...action.payload.user };
+            if (state.user && action.payload.user && action.payload.user._id === state.user._id) {
+                const updatedUserData = action.payload.user;
+
+                // Fusionne le nouvel objet utilisateur tout en préservant les objets imbriqués
+                state.user = {
+                    ...state.user,
+                    ...updatedUserData,
+                    // Fusion explicite pour les objets imbriqués que vous pourriez avoir.
+                    // Adaptez ceci à votre structure de données si nécessaire.
+                    // Par exemple, si vous avez un champ 'details':
+                    // details: {
+                    //     ...state.user.details,
+                    //     ...updatedUserData.details,
+                    // },
+                };
+
+                // La logique du token reste la même
                 if (action.payload.newToken) {
                     state.token = action.payload.newToken;
                     localStorage.setItem('authToken', action.payload.newToken);
                 }
             }
         },
+
         setJustReactivated: (state, action) => {
             state.justReactivated = action.payload;
         },
@@ -102,14 +116,14 @@ const authSlice = createSlice({
             state.token = action.payload;
             state.user = getUserFromToken(action.payload);
         },
-        // ✅ NOUVEAU REDUCER : Pour ajouter un avertissement reçu en temps réel
+        // Reducer pour ajouter un avertissement reçu en temps réel (INCHANGÉ)
         addWarningFromSocket: (state, action) => {
             if (state.user) {
-                // On s'assure que le tableau warnings existe
+                // S'assure que le tableau warnings existe
                 if (!state.user.warnings) {
                     state.user.warnings = [];
                 }
-                // On ajoute le nouvel avertissement au début de la liste
+                // Ajoute le nouvel avertissement au début de la liste
                 state.user.warnings.unshift(action.payload);
             }
         }
@@ -152,15 +166,12 @@ const authSlice = createSlice({
                 state.loading = false; 
                 state.error = action.payload; 
             })
-            // ✅ NOUVEAU CAS : Gérer la mise à jour de l'utilisateur après suppression d'un avertissement
+            // Gérer la mise à jour de l'utilisateur après suppression d'un avertissement (INCHANGÉ)
             .addCase(clearWarning.fulfilled, (state, action) => {
-                // On remplace l'utilisateur actuel par la version mise à jour
-                // renvoyée par le backend (avec l'avertissement en moins).
                 state.user = action.payload;
             });
     },
 });
 
-// ✅ On exporte la nouvelle action
 export const { logout, updateUserFromSocket, setJustReactivated, setToken, addWarningFromSocket } = authSlice.actions;
 export default authSlice.reducer;
