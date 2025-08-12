@@ -91,4 +91,4 @@ function UpdateNotification({ open, onClose, onConfirm, versionInfo }) {
   );
 }
 
-export default UpdateNotification;
+export default UpdateNotification; 
