@@ -92,8 +92,8 @@ function SpecialWarning() {
             )}
         </Box>
         <Box>
-            <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.8, fontSize: '0.9rem' }}>
-              Cette notification restera visible jusqu'à ce qu'une action soit prise.
+            <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.8, fontSize: '1rem' }}>
+              Cette notification restera visible jusqu'à ce que vous cliquez sur "Fermer" ou que vous contactiez le support. Vous pouvez également envoyez une vérification de profil.
             </Typography>
         </Box>
 
