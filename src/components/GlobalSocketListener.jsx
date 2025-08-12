@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-// ✅ On importe la nouvelle action pour ajouter un avertissement
 import { updateUserFromSocket, setJustReactivated, addWarningFromSocket } from '../redux/authSlice.js';
 import { updateServiceFromSocket, removeServiceFromSocket } from '../redux/serviceSlice.js';
 import { updateBookingFromSocket, addBooking, removeBooking, fetchUserBookings } from '../redux/bookingSlice.js';
@@ -25,17 +24,13 @@ import {
   onUserWarning, offUserWarning
 } from '../socket/socket.js';
 
-// ❌ On retire l'import de SpecialWarning ici. Il sera dans App.jsx ou MainLayout.jsx
-
+// Ce composant n'affiche rien, il est juste là pour écouter les événements.
 const GlobalSocketListener = () => {
     const { user, token } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
     const userStateRef = useRef(user);
-
-    // ❌ On supprime l'état local pour le message d'avertissement
-    // const [warningMessage, setWarningMessage] = useState(null);
 
     useEffect(() => {
         userStateRef.current = user;
@@ -107,7 +102,7 @@ const GlobalSocketListener = () => {
                 dispatch(fetchUserBookings());
             });
 
-            // ✅ On écoute les avertissements et on met à jour l'état Redux
+            // On écoute les avertissements et on met à jour l'état Redux
             onUserWarning((data) => {
                 if (data && data.warning) {
                     dispatch(addWarningFromSocket(data.warning));
@@ -139,7 +134,7 @@ const GlobalSocketListener = () => {
         };
     }, [token, user, dispatch, navigate, location]);
 
-    // ✅ Ce composant n'affiche plus rien, il ne fait qu'écouter.
+    // Ce composant n'affiche plus rien, il ne fait qu'écouter en arrière-plan.
     return null;
 };
 
