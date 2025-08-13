@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom'; // ✅ 1. On importe useNavigate
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -17,6 +18,7 @@ const pulseAnimation = keyframes`
 
 function SpecialWarning() {
     const dispatch = useDispatch();
+     const navigate = useNavigate(); // ✅ 2. On initialise useNavigate
     const { items: warnings } = useSelector((state) => state.warnings);
 
     const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -33,14 +35,12 @@ function SpecialWarning() {
             });
     };
 
-    // ✅ MODIFICATION ICI : On ajoute la logique pour la vérification de profil
-    const handleActionClick = (actionType) => {
-        if (actionType === 'contact_support') {
-            setContactModalOpen(true);
-        } else if (actionType === 'review_profile') { // Assurez-vous que ce type correspond à votre action
-            // 1. Affiche le toast de succès
-            toast.success("Profil vérifié avec succès. Faites plus attention !");
-            // 2. Ferme l'avertissement
+   const handleActionClick = (actionType) => {
+  if (actionType === 'contact_support') {
+    setContactModalOpen(true);
+  } else if (actionType === 'review_profile') {
+    // ✅ MODIFIE CETTE LIGNE
+    navigate('/profile', { state: { fromWarning: true } });
             handleDismiss();
         }
     };
