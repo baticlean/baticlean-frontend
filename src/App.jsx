@@ -1,17 +1,17 @@
 // src/App.jsx
 
 import React, { useState, useEffect } from 'react';
-// ✅ On importe Outlet pour la nouvelle structure
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux'; // ✅ On importe useSelector
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// --- IMPORTS POUR LES NOTIFICATIONS ---
-import { useVersionCheck } from './hooks/useVersionCheck';
+import { useVersion } from './context/VersionContext.jsx';
 import UpdateNotification from './components/UpdateNotification';
 import SpecialWarning from './components/SpecialWarning.jsx';
-// --- FIN DES IMPORTS ---
+import GlobalSocketListener from './components/GlobalSocketListener.jsx'; // ✅ On importe l'auditeur
 
+// ... (tous tes autres imports de pages et composants restent ici)
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -40,10 +40,10 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
-// ✅ 1. On crée un composant "racine" qui sera contrôlé par le routeur
+
 const AppRoot = () => {
-  // On déplace la logique de AppWithVersionCheck ici
-  const versionInfo = useVersionCheck();
+  const { versionInfo } = useVersion();
+  const { token } = useSelector((state) => state.auth); // ✅ On vérifie si l'utilisateur est connecté
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -58,22 +58,12 @@ const AppRoot = () => {
 
   return (
     <>
-      {/* Outlet va afficher la page correspondante (Login, Home, etc.) */}
+      {/* ✅ On active l'auditeur global uniquement si un token existe */}
+      {token && <GlobalSocketListener />}
+      
       <Outlet />
 
-      {/* Tous nos composants globaux sont maintenant DANS le contexte du routeur */}
-      <ToastContainer
-        position="bottom-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={true}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+      <ToastContainer position="bottom-right" autoClose={4000} hideProgressBar={false} newestOnTop={true} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
       <CookieConsent />
       <UpdateNotification
         open={modalOpen}
@@ -86,13 +76,10 @@ const AppRoot = () => {
   );
 };
 
-
-// ✅ 2. On met à jour la structure du routeur pour utiliser notre composant racine
 const router = createBrowserRouter([
   {
-    element: <AppRoot />, // Notre composant racine est l'élément principal
+    element: <AppRoot />,
     children: [
-      // Toutes les anciennes routes deviennent des enfants
       {
         path: '/',
         element: <PublicRoute />,
@@ -141,7 +128,6 @@ const router = createBrowserRouter([
   }
 ]);
 
-// ✅ 3. Le composant App devient beaucoup plus simple
 function App() {
   return <RouterProvider router={router} />;
 }
