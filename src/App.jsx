@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux'; // ✅ On importe useSelector
+import { useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -43,7 +43,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
 const AppRoot = () => {
   const { versionInfo } = useVersion();
-  const { token } = useSelector((state) => state.auth); // ✅ On vérifie si l'utilisateur est connecté
+  const { token } = useSelector((state) => state.auth);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ const AppRoot = () => {
 
   return (
     <>
-      {/* ✅ On active l'auditeur global uniquement si un token existe */}
+      {/* ✅ ON RÉINTÈGRE L'OREILLE ICI ! Elle est active dès qu'un token existe. */}
       {token && <GlobalSocketListener />}
       
       <Outlet />
