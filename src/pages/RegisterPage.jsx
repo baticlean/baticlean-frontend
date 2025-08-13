@@ -1,7 +1,7 @@
 // src/pages/RegisterPage.jsx (Version finale et correcte)
 
 import React, { useState } from 'react';
-import { Container, Box, Typography, TextField, Button, Grid, Link, IconButton, InputAdornment } from '@mui/material';
+import { Container, Box, Typography, TextField, Button, Grid, Link, IconButton, InputAdornment, FormControlLabel, Checkbox } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
@@ -16,6 +16,7 @@ function RegisterPage() {
     const [formData, setFormData] = useState({ username: '', email: '', password: '' });
     const [phoneNumber, setPhoneNumber] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false); // Nouvel état pour la case à cocher
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -29,7 +30,13 @@ function RegisterPage() {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validations
+        // Nouvelle validation pour la case à cocher
+        if (!termsAccepted) {
+            toast.error("Veuillez accepter les conditions d'utilisation et la politique de confidentialité pour continuer.");
+            return;
+        }
+
+        // Validations existantes
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         if (!emailRegex.test(formData.email)) {
             toast.error("Veuillez entrer une adresse email valide.");
@@ -110,6 +117,26 @@ function RegisterPage() {
                                     }}
                                 />
                             </Grid>
+                            {/* Début de l'ajout de la case à cocher */}
+                            <Grid item xs={12}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={termsAccepted}
+                                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                                            name="termsAccepted"
+                                            color="primary"
+                                            disabled={loading}
+                                        />
+                                    }
+                                    label={
+                                        <Typography variant="body2" color="text.secondary">
+                                            J'accepte les <Link component={RouterLink} to="/TermsPage" target="_blank">Conditions d'utilisation</Link> et la <Link component={RouterLink} to="/PrivacyPolicyPage" target="_blank">Politique de confidentialité</Link>.
+                                        </Typography>
+                                    }
+                                />
+                            </Grid>
+                             {/* Fin de l'ajout */}
                         </Grid>
                         <Button
                             type="submit"
