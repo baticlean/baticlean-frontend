@@ -7,7 +7,8 @@ import { toast } from 'react-toastify';
 
 import { updateUserFromSocket, setJustReactivated } from '../redux/authSlice.js';
 import { updateServiceFromSocket, removeServiceFromSocket } from '../redux/serviceSlice.js';
-import { addBooking, removeBooking, fetchUserBookings } from '../redux/bookingSlice.js';
+// ✅ On importe la bonne action depuis le slice
+import { addBooking, removeBooking, updateBookingFromSocket, fetchUserBookings } from '../redux/bookingSlice.js';
 import { addAdminTicket, removeAdminTicket, updateTicket } from '../redux/ticketSlice.js';
 import { addReclamation, removeReclamation } from '../redux/reclamationSlice.js';
 import { setCounts } from '../redux/notificationSlice.js';
@@ -17,7 +18,8 @@ import {
   connectSocket, disconnectSocket,
   onUserUpdate, offUserUpdate,
   onNewUserRegistered, offNewUserRegistered,
-  onNewBooking, offNewBooking, onBookingDeleted, offBookingDeleted,
+  // ✅ On importe les fonctions de mise à jour de réservation
+  onNewBooking, offNewBooking, onBookingDeleted, offBookingDeleted, onBookingUpdate, offBookingUpdate,
   onNewTicket, offNewTicket, onTicketDeleted, offTicketDeleted,
   onNewReclamation, offNewReclamation, onReclamationDeleted, offReclamationDeleted,
   onNotificationCountsUpdated, offNotificationCountsUpdated,
@@ -47,7 +49,6 @@ const GlobalSocketListener = () => {
     
     connectSocket(user._id);
 
-    // On utilise directement l'objet 'user' à jour
     const isAdmin = user && ['admin', 'superAdmin'].includes(user.role);
 
     dispatch(fetchMyWarnings());
@@ -61,7 +62,6 @@ const GlobalSocketListener = () => {
         const oldRole = currentUser.role;
         const oldStatus = currentUser.status;
         
-        // Dispatch met à jour l'état Redux, ce qui déclenchera le re-render du MainLayout
         dispatch(updateUserFromSocket({ user: updatedUser, newToken }));
 
         if (['banned', 'suspended'].includes(updatedUser.status) && oldStatus !== updatedUser.status) {
@@ -100,6 +100,12 @@ const GlobalSocketListener = () => {
       onNewReclamation((data) => dispatch(addReclamation(data)));
       onReclamationDeleted((data) => dispatch(removeReclamation(data)));
       onNotificationCountsUpdated((newCounts) => dispatch(setCounts(newCounts)));
+
+      // ✅ CORRECTION APPORTÉE ICI : On place l'écouteur dans la section ADMIN
+      onBookingUpdate((updatedBooking) => {
+        dispatch(updateBookingFromSocket(updatedBooking));
+      });
+
     } else {
       onBookingStatusChanged((payload) => {
         toast.info(payload.message);
@@ -121,6 +127,8 @@ const GlobalSocketListener = () => {
       offNewUserRegistered();
       offNewBooking();
       offBookingDeleted();
+      // ✅ On nettoie le nouvel écouteur
+      offBookingUpdate(); 
       offNewTicket();
       offTicketDeleted();
       offNewReclamation();
@@ -129,7 +137,6 @@ const GlobalSocketListener = () => {
       offBookingStatusChanged();
       offNewWarningReceived();
     };
-    // ✅ LA CORRECTION EST ICI : on utilise 'user' et non 'user._id'
   }, [token, user, dispatch, navigate, location]);
 
   return null;
