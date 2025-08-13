@@ -131,7 +131,7 @@ function RegisterPage() {
                                     }
                                     label={
                                         <Typography variant="body2" color="text.secondary">
-                                            J'accepte les <Link component={RouterLink} to="/TermsPage" target="_blank">Conditions d'utilisation</Link> et la <Link component={RouterLink} to="/PrivacyPolicyPage" target="_blank">Politique de confidentialité</Link>.
+                                            J'accepte les <Link component={RouterLink} to="/terms" target="_blank">Conditions d'utilisation</Link> et la <Link component={RouterLink} to="/privacy" target="_blank">Politique de confidentialité</Link>.
                                         </Typography>
                                     }
                                 />
