@@ -14,7 +14,7 @@ import { setCounts } from '../redux/notificationSlice.js';
 import { fetchMyWarnings } from '../redux/warningSlice.js';
 
 import {
-  connectSocket, disconnectSocket, addUserSocket,
+  connectSocket, disconnectSocket,
   onUserUpdate, offUserUpdate,
   onNewUserRegistered, offNewUserRegistered,
   onNewBooking, offNewBooking, onBookingDeleted, offBookingDeleted,
@@ -47,7 +47,8 @@ const GlobalSocketListener = () => {
     
     connectSocket(user._id);
 
-    const isAdmin = ['admin', 'superAdmin'].includes(userStateRef.current?.role);
+    // On utilise directement l'objet 'user' à jour
+    const isAdmin = user && ['admin', 'superAdmin'].includes(user.role);
 
     dispatch(fetchMyWarnings());
 
@@ -55,18 +56,25 @@ const GlobalSocketListener = () => {
       if (!data || !data.user) return;
       const { user: updatedUser, newToken } = data;
       const currentUser = userStateRef.current;
+
       if (currentUser && updatedUser._id === currentUser._id) {
-        const oldState = currentUser;
+        const oldRole = currentUser.role;
+        const oldStatus = currentUser.status;
+        
+        // Dispatch met à jour l'état Redux, ce qui déclenchera le re-render du MainLayout
         dispatch(updateUserFromSocket({ user: updatedUser, newToken }));
-        if (['banned', 'suspended'].includes(updatedUser.status) && location.pathname !== '/banned') {
+
+        if (['banned', 'suspended'].includes(updatedUser.status) && oldStatus !== updatedUser.status) {
           toast.error("Votre compte a été suspendu ou banni.");
-          navigate('/banned');
+          if (location.pathname !== '/banned') navigate('/banned');
         }
-        if (updatedUser.status === 'active' && oldState && ['banned', 'suspended'].includes(oldState.status)) {
+        
+        if (updatedUser.status === 'active' && ['banned', 'suspended'].includes(oldStatus)) {
           dispatch(setJustReactivated(true));
         }
-        if (oldState && updatedUser.role !== oldState.role) {
-          if (updatedUser.role.includes('admin')) {
+
+        if (updatedUser.role !== oldRole) {
+          if (['admin', 'superAdmin'].includes(updatedUser.role)) {
             toast.success('🎉 Vous avez été promu Administrateur !');
           } else {
             toast.error('🔒 Vos droits administrateur ont été révoqués.');
@@ -77,12 +85,7 @@ const GlobalSocketListener = () => {
     });
     
     onTicketUpdated((updatedTicket) => {
-      const currentUser = userStateRef.current;
-      if (!currentUser) return;
       dispatch(updateTicket(updatedTicket));
-      if (currentUser.role === 'user' && (updatedTicket.user === currentUser._id || updatedTicket.user?._id === currentUser._id) && !updatedTicket.isReadByUser) {
-        dispatch(setNewTicketUpdate(true));
-      }
     });
     
     onServiceUpdate((data) => dispatch(updateServiceFromSocket(data)));
@@ -110,25 +113,23 @@ const GlobalSocketListener = () => {
     }
 
     return () => {
+      // Nettoyage complet des listeners
       offUserUpdate();
       offTicketUpdated();
       offServiceUpdate();
       offServiceDeleted();
-      if (isAdmin) {
-        offNewUserRegistered();
-        offNewBooking();
-        offBookingDeleted();
-        offNewTicket();
-        offTicketDeleted();
-        offNewReclamation();
-        offReclamationDeleted();
-        offNotificationCountsUpdated();
-      } else {
-        offBookingStatusChanged();
-        offNewWarningReceived();
-      }
-      disconnectSocket();
+      offNewUserRegistered();
+      offNewBooking();
+      offBookingDeleted();
+      offNewTicket();
+      offTicketDeleted();
+      offNewReclamation();
+      offReclamationDeleted();
+      offNotificationCountsUpdated();
+      offBookingStatusChanged();
+      offNewWarningReceived();
     };
+    // ✅ LA CORRECTION EST ICI : on utilise 'user' et non 'user._id'
   }, [token, user, dispatch, navigate, location]);
 
   return null;

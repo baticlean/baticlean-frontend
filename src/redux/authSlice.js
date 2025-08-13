@@ -19,9 +19,10 @@ const getUserFromToken = (token) => {
 export const loginUser = createAsyncThunk('auth/login', async (userData, { rejectWithValue }) => {
     try {
         const response = await axios.post(`${API_URL}/api/login`, userData);
-        return response.data; // Renvoie { authToken }
+        // On sauvegarde le token ici pour être sûr qu'il est présent avant la redirection
+        localStorage.setItem('authToken', response.data.authToken);
+        return response.data;
     } catch (error) {
-        // ... (ta gestion d'erreur est bonne, on la garde)
         if (error.response) {
             const errorPayload = { 
                 message: error.response.data.message || 'Erreur de connexion', 
@@ -37,7 +38,11 @@ export const loginUser = createAsyncThunk('auth/login', async (userData, { rejec
 export const registerUser = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
     try {
         const response = await axios.post(`${API_URL}/api/register`, userData);
-        return response.data; // Renvoie { authToken, isNewUser }
+        // On sauvegarde aussi le token ici pour la connexion automatique
+        if (response.data.authToken) {
+            localStorage.setItem('authToken', response.data.authToken);
+        }
+        return response.data;
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || "Erreur d'inscription");
     }
@@ -53,7 +58,7 @@ const authSlice = createSlice({
     loading: false,
     error: null,
     justReactivated: false,
-    isNewUser: false, // ✅ On ajoute ce champ important
+    isNewUser: false,
   },
   reducers: {
     logout: (state) => {
@@ -61,61 +66,66 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.justReactivated = false;
-      state.isNewUser = false; // On le réinitialise aussi
+      state.isNewUser = false;
       state.error = null;
     },
+    // ✅ --- DÉBUT DE LA CORRECTION ---
     updateUserFromSocket: (state, action) => {
-      // ... (ta logique est bonne, on la garde)
+      const { user: updatedUser, newToken } = action.payload;
+      // On vérifie que la mise à jour concerne bien l'utilisateur actuel
+      if (state.user && state.user._id === updatedUser._id) {
+        state.user = updatedUser; // On met à jour les infos de l'utilisateur
+        
+        // C'est la partie la plus importante : on met à jour le token !
+        if (newToken) {
+          state.token = newToken;
+          localStorage.setItem('authToken', newToken);
+        }
+      }
     },
+    // ✅ --- FIN DE LA CORRECTION ---
     setJustReactivated: (state, action) => {
       state.justReactivated = action.payload;
     },
     setToken: (state, action) => {
-      // ... (ta logique est bonne, on la garde)
+      const token = action.payload;
+      state.token = token;
+      localStorage.setItem('authToken', token);
+      state.user = getUserFromToken(token);
+      state.justReactivated = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Cas Pending (commun)
       .addCase(loginUser.pending, (state) => { 
         state.loading = true;
         state.error = null; 
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.authToken;
+        state.user = getUserFromToken(action.payload.authToken);
+        state.isNewUser = false;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message; 
+        if (action.payload.authToken) {
+            state.token = action.payload.authToken;
+            state.user = getUserFromToken(action.payload.authToken);
+        }
       })
       .addCase(registerUser.pending, (state) => { 
         state.loading = true;
         state.error = null; 
       })
-
-      // Cas Login Réussi
-      .addCase(loginUser.fulfilled, (state, action) => {
-        const { authToken } = action.payload;
-        localStorage.setItem('authToken', authToken); // On sauvegarde le token
+      .addCase(registerUser.fulfilled, (state, action) => { 
         state.loading = false;
-        state.token = authToken;
-        state.user = getUserFromToken(authToken);
-        state.isNewUser = false; // Ce n'est pas un nouvel utilisateur
-      })
-      
-      // ✅ LA CORRECTION PRINCIPALE EST ICI
-      // Cas Inscription Réussie
-      .addCase(registerUser.fulfilled, (state, action) => {
         const { authToken, isNewUser } = action.payload;
-        localStorage.setItem('authToken', authToken); // On sauvegarde le token
-        state.loading = false;
         state.token = authToken;
         state.user = getUserFromToken(authToken);
-        state.isNewUser = isNewUser; // On note que c'est un nouvel utilisateur
-      })
-      
-      // Cas Échec (commun)
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload.message; // On stocke juste le message
-        // Le reste de ta logique pour le cas "banni" est bonne
-        if (action.payload.authToken) {
-            state.token = action.payload.authToken;
-            state.user = getUserFromToken(action.payload.authToken);
-        }
+        state.isNewUser = isNewUser;
       })
       .addCase(registerUser.rejected, (state, action) => { 
         state.loading = false; 
