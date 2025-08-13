@@ -1,17 +1,16 @@
 // src/App.jsx
 
 import React, { useState, useEffect } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+// ✅ On importe Outlet pour la nouvelle structure
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// --- IMPORTS POUR LA NOTIFICATION DE MISE À JOUR ---
+// --- IMPORTS POUR LES NOTIFICATIONS ---
 import { useVersionCheck } from './hooks/useVersionCheck';
 import UpdateNotification from './components/UpdateNotification';
-// --- FIN DES IMPORTS ---
-
-// ✅ 1. On importe notre nouveau composant d'avertissement persistant
 import SpecialWarning from './components/SpecialWarning.jsx';
+// --- FIN DES IMPORTS ---
 
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -41,54 +40,9 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <PublicRoute />,
-    children: [
-      { index: true, element: <LandingPage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'temporary-lock', element: <TemporaryLockPage /> },
-      { path: 'forgot-password', element: <ForgotPasswordPage /> },
-      { path: 'reset-password/:token', element: <ResetPasswordPage /> },
-    ],
-  },
-  { path: "/privacy", element: <PrivacyPolicyPage /> },
-  { path: "/terms", element: <TermsPage /> },
-  {
-    path: '/',
-    element: <ProtectedRoute />,
-    children: [
-      { path: 'banned', element: <BannedPage /> },
-      { path: 'welcome', element: <LoginTransition /> },
-      {
-        element: <AuthStatusHandler />,
-        children: [
-          {
-            element: <MainLayout />,
-            children: [
-              { path: "home", element: <HomePage /> },
-              { path: "profile", element: <ProfilePage /> },
-              { path: "my-bookings", element: <MyBookingsPage /> },
-              { path: "my-tickets", element: <UserTicketsPage /> },
-              { path: "support-chat", element: <SupportChatPage /> },
-              { path: "admin/dashboard", element: <AdminDashboardPage /> },
-              { path: "admin/users", element: <AdminUsersPage /> },
-              { path: "admin/services", element: <AdminServicesPage /> },
-              { path: "admin/tickets", element: <AdminTicketsPage /> },
-              { path: "admin/bookings", element: <AdminBookingsPage /> },
-              { path: "admin/reclamations", element: <AdminReclamationsPage /> },
-              { path: "admin/maintenance", element: <MaintenanceAdminPage /> },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-]);
-
-function AppWithVersionCheck() {
+// ✅ 1. On crée un composant "racine" qui sera contrôlé par le routeur
+const AppRoot = () => {
+  // On déplace la logique de AppWithVersionCheck ici
   const versionInfo = useVersionCheck();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -104,7 +58,10 @@ function AppWithVersionCheck() {
 
   return (
     <>
-      <RouterProvider router={router} />
+      {/* Outlet va afficher la page correspondante (Login, Home, etc.) */}
+      <Outlet />
+
+      {/* Tous nos composants globaux sont maintenant DANS le contexte du routeur */}
       <ToastContainer
         position="bottom-right"
         autoClose={4000}
@@ -118,22 +75,75 @@ function AppWithVersionCheck() {
         theme="colored"
       />
       <CookieConsent />
-      
       <UpdateNotification
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleUpdate}
         versionInfo={versionInfo}
       />
-      
-      {/* ✅ 2. On ajoute le composant ici. Il sera toujours actif. */}
       <SpecialWarning />
     </>
   );
-}
+};
 
+
+// ✅ 2. On met à jour la structure du routeur pour utiliser notre composant racine
+const router = createBrowserRouter([
+  {
+    element: <AppRoot />, // Notre composant racine est l'élément principal
+    children: [
+      // Toutes les anciennes routes deviennent des enfants
+      {
+        path: '/',
+        element: <PublicRoute />,
+        children: [
+          { index: true, element: <LandingPage /> },
+          { path: 'login', element: <LoginPage /> },
+          { path: 'register', element: <RegisterPage /> },
+          { path: 'temporary-lock', element: <TemporaryLockPage /> },
+          { path: 'forgot-password', element: <ForgotPasswordPage /> },
+          { path: 'reset-password/:token', element: <ResetPasswordPage /> },
+        ],
+      },
+      { path: "/privacy", element: <PrivacyPolicyPage /> },
+      { path: "/terms", element: <TermsPage /> },
+      {
+        path: '/',
+        element: <ProtectedRoute />,
+        children: [
+          { path: 'banned', element: <BannedPage /> },
+          { path: 'welcome', element: <LoginTransition /> },
+          {
+            element: <AuthStatusHandler />,
+            children: [
+              {
+                element: <MainLayout />,
+                children: [
+                  { path: "home", element: <HomePage /> },
+                  { path: "profile", element: <ProfilePage /> },
+                  { path: "my-bookings", element: <MyBookingsPage /> },
+                  { path: "my-tickets", element: <UserTicketsPage /> },
+                  { path: "support-chat", element: <SupportChatPage /> },
+                  { path: "admin/dashboard", element: <AdminDashboardPage /> },
+                  { path: "admin/users", element: <AdminUsersPage /> },
+                  { path: "admin/services", element: <AdminServicesPage /> },
+                  { path: "admin/tickets", element: <AdminTicketsPage /> },
+                  { path: "admin/bookings", element: <AdminBookingsPage /> },
+                  { path: "admin/reclamations", element: <AdminReclamationsPage /> },
+                  { path: "admin/maintenance", element: <MaintenanceAdminPage /> },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+  }
+]);
+
+// ✅ 3. Le composant App devient beaucoup plus simple
 function App() {
-  return <AppWithVersionCheck />;
+  return <RouterProvider router={router} />;
 }
 
 export default App;
