@@ -24,3 +24,8 @@ services:
       - path: "index.html"
         name: "Expires"
         value: "0"
+
+         # ✅ ON AJOUTE CETTE SECTION POUR GÉRER LES ROUTES
+    rewrites:
+      - source: "/*"
+        destination: "/index.html"
