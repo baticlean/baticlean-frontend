@@ -187,7 +187,7 @@ const Comment = ({ comment, serviceId, isReply = false }) => {
     );
 };
 
-// --- COMPOSANT CARTE DE SERVICE (INCHANGÉ) ---
+// --- COMPOSANT CARTE DE SERVICE (CORRIGÉ) ---
 const ServiceCard = ({ service, onBook }) => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
@@ -201,13 +201,19 @@ const ServiceCard = ({ service, onBook }) => {
     const averageRating = reviews.length > 0 ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length : 0;
     
     const nestComments = (commentList = []) => {
-        const commentMap = new Map(commentList.map(c => [c._id, {...c, replies: []}]));
+        // ====================================================================
+        // ✅ LA CORRECTION EST ICI
+        // En clonant la liste des commentaires, on évite de modifier la "prop" originale,
+        // ce qui est une mauvaise pratique en React ("mutation") et cassait la mise à jour de l'affichage.
+        const safeCommentList = JSON.parse(JSON.stringify(commentList));
+        const commentMap = new Map(safeCommentList.map(c => [c._id, {...c, replies: []}]));
+        // ====================================================================
+        
         const topLevelComments = [];
     
         for (const comment of commentMap.values()) {
             if (comment.parent && commentMap.has(comment.parent)) {
                 const parent = commentMap.get(comment.parent);
-                if (!parent.replies) parent.replies = [];
                 parent.replies.push(comment);
             } else {
                 topLevelComments.push(comment);
@@ -270,7 +276,7 @@ const ServiceCard = ({ service, onBook }) => {
     );
 };
 
-// --- COMPOSANT GRILLE (MODIFIÉ) ---
+// --- COMPOSANT GRILLE (INCHANGÉ) ---
 function ResponsiveServiceGrid({ services }) {
     const containerRef = useRef(null);
     const [showScrollHint, setShowScrollHint] = useState(false);
@@ -295,8 +301,6 @@ function ResponsiveServiceGrid({ services }) {
             <Box ref={containerRef} sx={{ display: 'flex', overflowX: 'auto', pb: 2, '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'primary.main', borderRadius: '4px' } }}>
                 <Box sx={{ display: 'flex', gap: 4, minWidth: 'max-content' }}>
                     {services.map((service) => (
-                        // RESPONSIVE: La largeur est maintenant relative à la taille de l'écran sur mobile (xs)
-                        // mais avec une largeur maximale pour ne pas être trop grande, et redevient fixe sur les écrans plus larges (sm).
                         <Box key={service._id} sx={{ width: { xs: '80vw', sm: '320px' }, maxWidth: { xs: '280px', sm: '320px' }, flexShrink: 0 }}>
                             <ServiceCard service={service} onBook={handleOpenBookingModal} />
                         </Box>
