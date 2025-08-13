@@ -1,6 +1,8 @@
 // src/pages/ProfilePage.jsx
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react'; // ✅ 1. On ajoute useEffect
 import { useSelector, useDispatch } from 'react-redux';
+import { useLocation } from 'react-router-dom'; // ✅ 2. On importe useLocation
 import { Container, Paper, Typography, Box, Avatar, Button, TextField, Grid } from '@mui/material';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -13,6 +15,8 @@ const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 function ProfilePage() {
   const { user, token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const location = useLocation(); // ✅ 3. On initialise useLocation
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -20,8 +24,16 @@ function ProfilePage() {
     phoneNumber: user?.phoneNumber || '',
   });
 
+  // ✅ 4. On ajoute le useEffect pour afficher le toast
+  useEffect(() => {
+    // Si on arrive sur cette page avec le "signal" que l'on vient d'un avertissement...
+    if (location.state?.fromWarning) {
+      // ...on affiche la notification.
+      toast.info("Veuillez vérifier vos informations et les mettre à jour si nécessaire.");
+    }
+  }, [location.state]); // Se déclenche uniquement quand l'état de la location change
+
   const handleApiResponse = (response) => {
-    // Met à jour le token dans Redux et localStorage
     dispatch(setToken(response.data.authToken));
   };
 
