@@ -1,4 +1,4 @@
-// src/pages/SupportChatPage.jsx (Version Intelligente et Corrigée)
+// src/pages/SupportChatPage.jsx (Corrigé)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, TextField, IconButton, Paper, Typography, List, ListItem, Button, CircularProgress } from '@mui/material';
@@ -38,21 +38,26 @@ function SupportChatPage() {
     const handleSend = async (e) => {
         e.preventDefault();
         if (input.trim() && !isBotTyping) {
-            // On retire le bouton "créer un ticket" des messages précédents
-            const cleanedMessages = messages.map(msg => ({ ...msg, showCreateTicket: false }));
             const userMessage = { sender: 'user', text: input };
-            const newMessages = [...cleanedMessages, userMessage];
 
-            setMessages(newMessages);
+            // ✅ --- DÉBUT DE LA CORRECTION ---
+            // 1. On prépare l'historique pour l'API AVANT de mettre à jour l'affichage.
+            //    On retire le tout premier message de bienvenue du bot.
+            const historyForApi = messages.slice(1);
+            
+            // 2. On met à jour l'affichage local immédiatement pour une meilleure UX.
+            setMessages(prev => [...prev.map(msg => ({ ...msg, showCreateTicket: false })), userMessage]);
             setInput('');
             setIsBotTyping(true);
+            // ✅ --- FIN DE LA CORRECTION ---
 
             try {
                 const response = await axios.post(
                     `${API_URL}/api/chatbot/ask`,
                     {
                         message: input,
-                        history: newMessages.slice(1) // On envoie l'historique sans le message de bienvenue
+                        // 3. On envoie l'historique correct (sans le nouveau message)
+                        history: historyForApi
                     },
                     {
                         headers: { Authorization: `Bearer ${token}` }
@@ -76,10 +81,8 @@ function SupportChatPage() {
             }
         }
     };
-
-    // ✅ LA LOGIQUE DE CETTE FONCTION EST MAINTENANT RESTAURÉE
+    
     const handleCreateTicket = () => {
-        // On retire le bouton du dernier message pour qu'il ne soit pas inclus dans le ticket
         const cleanedMessages = messages.map(msg => ({ ...msg, showCreateTicket: false }));
         
         toast.promise(
