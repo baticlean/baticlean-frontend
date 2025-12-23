@@ -1,3 +1,5 @@
+// baticlean-frontend/src/pages/LandingPage.jsx
+
 import React from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -7,8 +9,7 @@ import CircularLoading from '../components/CircularLoading.jsx';
 import Footer from '../components/Footer.jsx';
 import { keyframes } from '@emotion/react';
 
-// NOUVELLE PALETTE "OASIS" : Turquoise, Or, et Blanc.
-const colors = ['#FFFFFF', '#FFD700', '#FFFFFF', '#AFEEEE']; // Blanc, Jaune Or, Blanc, Turquoise Pâle
+const colors = ['#FFFFFF', '#FFD700', '#FFFFFF', '#AFEEEE'];
 
 const colorAnimationMain = keyframes`
   0%, 100% { color: ${colors[0]}; }
@@ -61,7 +62,7 @@ function LandingPage() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden' }}>
       <Box
         sx={{
           display: 'flex',
@@ -72,7 +73,7 @@ function LandingPage() {
           background: 'linear-gradient(135deg, #005B6A 0%, #40E0D0 100%)',
           color: 'white',
           textAlign: 'center',
-          padding: 3,
+          padding: { xs: 2, sm: 3 }, // Padding réduit sur mobile
         }}
       >
         <motion.div
@@ -81,23 +82,21 @@ function LandingPage() {
           transition={{ duration: 1.5, ease: 'easeOut' }}
         >
           <Typography 
-  variant="h2" 
-  component="h1" 
-  sx={{ 
-    fontWeight: 'bold', 
-    mb: 2,
-    animation: `${colorAnimationMain} 8s linear infinite`,
-    
-    // ✅ AJOUT : La taille de la police s'adapte à la taille de l'écran
-    fontSize: {
-      xs: '2.2rem', // Taille pour les écrans très petits (mobile)
-      sm: '3rem',   // Taille pour les petits écrans (tablette)
-      md: '4rem'    // Taille pour les écrans moyens et grands (bureau)
-    }
-  }}
->
-  BATIClean, un bâtiment propre pour une image forte.
-</Typography>
+            variant="h2" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 'bold', 
+              mb: { xs: 1, sm: 2 },
+              animation: `${colorAnimationMain} 8s linear infinite`,
+              fontSize: {
+                xs: '1.8rem', // Taille optimisée pour mobile (évite le scroll)
+                sm: '3rem',
+                md: '4rem'
+              }
+            }}
+          >
+            BATIClean, un bâtiment propre pour une image forte.
+          </Typography>
 
           <Typography 
             variant="h5"
@@ -106,10 +105,11 @@ function LandingPage() {
               fontFamily: 'Pollin',
               fontWeight: '300',
               mb: 1,
+              fontSize: { xs: '1.1rem', sm: '1.5rem' },
               animation: `${colorAnimationSub} 8s linear infinite`
             }}
           >
-            Créée par Kevin Amon, Initié par Yvann Acandi.
+            Créé par Kevin Amon, Initié par Yvann Acandi.
           </Typography>
 
           <Typography 
@@ -118,7 +118,8 @@ function LandingPage() {
             sx={{ 
               fontFamily: 'Pollin',
               fontWeight: '300',
-              mb: 4,
+              mb: { xs: 3, sm: 4 },
+              fontSize: { xs: '0.9rem', sm: '1.25rem' },
               animation: `${colorAnimationSub} 8s linear infinite`
             }}
           >
@@ -131,24 +132,22 @@ function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
         >
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '80%', sm: 'auto' }, margin: '0 auto' }}>
               <Button 
                 variant="contained" 
                 sx={{ 
                   ...buttonSx, 
-                  backgroundColor: '#FFD700', // Jaune Or
-                  color: 'white',             // CORRIGÉ : Le texte est maintenant blanc
-                  '&:hover': { 
-                    backgroundColor: '#E6C300' // Or un peu plus foncé au survol
-                  } 
+                  backgroundColor: '#FFD700',
+                  color: 'white',
+                  '&:hover': { backgroundColor: '#E6C300' } 
                 }} 
                 onClick={() => navigate('/register')}
               >
                 S'inscrire
               </Button>
-              <Button variant="outlined" color="inherit" sx={{ ...buttonSx, borderColor: 'white', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255, 255, 255, 0.1)' } }} onClick={() => navigate('/login')}>Se connecter</Button>
-              <Button variant="outlined" color="inherit" sx={{ ...buttonSx, borderColor: 'white', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255, 255, 255, 0.1)' } }} onClick={handleActionClick}>Demander un devis</Button>
-              <Button variant="outlined" color="inherit" sx={{ ...buttonSx, borderColor: 'white', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255, 255, 255, 0.1)' } }} onClick={handleActionClick}>Réserver un service</Button>
+              <Button variant="outlined" color="inherit" sx={{ ...buttonSx, borderColor: 'white', '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' } }} onClick={() => navigate('/login')}>Se connecter</Button>
+              <Button variant="outlined" color="inherit" sx={{ ...buttonSx, borderColor: 'white', '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' } }} onClick={handleActionClick}>Demander un devis</Button>
+              <Button variant="outlined" color="inherit" sx={{ ...buttonSx, borderColor: 'white', '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' } }} onClick={handleActionClick}>Réserver un service</Button>
           </Stack>
         </motion.div>
       </Box>
