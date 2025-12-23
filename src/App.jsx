@@ -1,6 +1,6 @@
 // baticlean-frontend/src/App.jsx
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
@@ -9,7 +9,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useVersion } from './context/VersionContext.jsx';
 import UpdateNotification from './components/UpdateNotification';
 import UpdateCompleteModal from './components/UpdateCompleteModal';
-// ✅ On remplace FullScreenLoader par le nouvel écran spécifique
 import UpdatingScreen from './components/UpdatingScreen'; 
 import SpecialWarning from './components/SpecialWarning.jsx';
 import GlobalSocketListener from './components/GlobalSocketListener.jsx';
@@ -47,41 +46,31 @@ const AppRoot = () => {
   const { 
     versionInfo, 
     confirmUpdate, 
+    declineUpdate, // ✅ Récupéré
+    isModalOpen, // ✅ Récupéré depuis le hook
     isUpdateInProgress, 
-    // ✅ C'est cet état qui va piloter l'écran de travaux
-    isPostUpdateLoading, 
+    isPostUpdateLoading,
     showUpdateCompleteModal, 
     setShowUpdateCompleteModal 
   } = useVersion();
   
   const { token } = useSelector((state) => state.auth);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    if (versionInfo.available) {
-      setModalOpen(true);
-    }
-  }, [versionInfo]);
-
-  // ❌ ANCIEN CODE SUPPRIMÉ : On ne bloque plus le rendu !
-  // if (isUpdateInProgress || isPostUpdateLoading) { ... }
 
   return (
     <>
-      {/* ✅ LE NOUVEAU RIDEAU : S'affiche par-dessus tout le reste si nécessaire */}
+      {/* ✅ Rideau de protection */}
       <UpdatingScreen open={isUpdateInProgress || isPostUpdateLoading} />
 
       {token && <GlobalSocketListener />}
       
-      {/* Le reste de l'application se charge ici, SOUS le UpdatingScreen */}
       <Outlet />
 
       <ToastContainer position="bottom-right" autoClose={4000} theme="colored" />
       <CookieConsent />
       
       <UpdateNotification
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={isModalOpen} // ✅ Piloté par le hook centralisé
+        onClose={declineUpdate}
         onConfirm={confirmUpdate}
         versionInfo={versionInfo}
       />

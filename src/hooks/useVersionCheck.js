@@ -7,32 +7,30 @@ const POLLING_INTERVAL = 1 * 60 * 1000; // 1 minute
 export function useVersionCheck() {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
   const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // ✅ On gère l'ouverture ici
   
-  // ✅ Initialisation synchrone pour capter le flag dès le millième de seconde
   const [isPostUpdateLoading, setIsPostUpdateLoading] = useState(() => {
     return !!sessionStorage.getItem('pwaUpdateInProgress');
   });
   
   const [showUpdateCompleteModal, setShowUpdateCompleteModal] = useState(false);
 
-  // Gestion du rideau de travaux après le rechargement
   useEffect(() => {
     if (isPostUpdateLoading) {
-      // ✅ ON PASSE À 30 SECONDES (30000ms) POUR ÊTRE SÛR QUE TOUT LE CACHE EST PRÊT
       const timer = setTimeout(() => {
         sessionStorage.removeItem('pwaUpdateInProgress');
         setIsPostUpdateLoading(false);
         setShowUpdateCompleteModal(true);
-      }, 30000); 
-
+      }, 30000); // Garde les 30s de sécurité
       return () => clearTimeout(timer);
     }
   }, [isPostUpdateLoading]);
 
-  // Vérification périodique (Inchangé)
   const performCheck = useCallback(async () => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
-    if (!currentVersion || versionInfo.available) return;
+    
+    // ✅ NE PAS VÉRIFIER si on est déjà en train de mettre à jour ou si le modal est déjà ouvert
+    if (!currentVersion || versionInfo.available || isUpdateInProgress || isPostUpdateLoading) return;
 
     try {
       const url = `/meta.json?t=${new Date().getTime()}`;
@@ -41,22 +39,24 @@ export function useVersionCheck() {
       
       if (meta.fullVersion !== currentVersion) {
         setVersionInfo({ available: true, ...meta });
+        setIsModalOpen(true); // ✅ Ouvre le modal automatiquement ici
         return true;
       }
     } catch (error) {
       console.error("Erreur version check:", error);
     }
     return false;
-  }, [versionInfo.available]);
+  }, [versionInfo.available, isUpdateInProgress, isPostUpdateLoading]);
 
   useEffect(() => {
     const interval = setInterval(performCheck, POLLING_INTERVAL);
     return () => clearInterval(interval);
   }, [performCheck]);
 
-  // Lancement de la mise à jour
   const confirmUpdate = async () => {
+    setIsModalOpen(false); // ✅ FERME IMMÉDIATEMENT LE MODAL pour éviter la régression
     setIsUpdateInProgress(true);
+    
     sessionStorage.setItem('newAppVersion', versionInfo.displayVersion || 'Nouvelle');
     sessionStorage.setItem('pwaUpdateInProgress', 'true');
 
@@ -76,13 +76,19 @@ export function useVersionCheck() {
     }, 1000);
   };
 
+  const declineUpdate = () => {
+    setIsModalOpen(false);
+  };
+
   return {
     versionInfo,
     isUpdateInProgress,
     isPostUpdateLoading,
+    isModalOpen, // ✅ Exporté
     showUpdateCompleteModal,
     setShowUpdateCompleteModal,
     confirmUpdate,
+    declineUpdate, // ✅ Exporté
     performCheck
   };
 }

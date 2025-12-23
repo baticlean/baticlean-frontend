@@ -38,9 +38,10 @@ const UpdatingScreen = ({ open }) => {
       <Typography variant="body1" sx={{ mb: 1, opacity: 0.9, textAlign: 'center', maxWidth: 500 }}>
         BATIClean se met à jour pour vous offrir une meilleure expérience.
       </Typography>
-      {/* ✅ Petit message pour justifier les 30 secondes */}
+      
+      {/* ✅ TEXTE MODIFIÉ SELON TON EXIGENCE */}
       <Typography variant="caption" sx={{ mb: 4, opacity: 0.7, fontStyle: 'italic' }}>
-        Cela peut prendre jusqu'à 30 secondes selon votre connexion...
+        Cela peut prendre un certain temps selon votre connexion...
       </Typography>
 
       <CircularProgress color="inherit" size={30} thickness={4} />
