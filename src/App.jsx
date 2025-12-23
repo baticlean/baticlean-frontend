@@ -47,7 +47,7 @@ const AppRoot = () => {
     versionInfo, 
     confirmUpdate, 
     isUpdateInProgress, 
-    isPostUpdateLoading, // ✅ On récupère le nouvel état
+    isPostUpdateLoading,
     showUpdateCompleteModal, 
     setShowUpdateCompleteModal 
   } = useVersion();
@@ -61,15 +61,18 @@ const AppRoot = () => {
     }
   }, [versionInfo]);
 
+  // ✅ BLOCAGE CRITIQUE : Si on est en train de mettre à jour ou de charger après mise à jour,
+  // on affiche UNIQUEMENT le loader. Pas de flash possible.
+  if (isUpdateInProgress || isPostUpdateLoading) {
+    return (
+      <FullScreenLoader 
+        message={isUpdateInProgress ? "Installation de la mise à jour..." : "Finalisation et optimisation du système..."} 
+      />
+    );
+  }
+
   return (
     <>
-      {/* ✅ LOADER PENDANT ET APRÈS LA MISE À JOUR */}
-      {(isUpdateInProgress || isPostUpdateLoading) && (
-        <FullScreenLoader 
-          message={isUpdateInProgress ? "Installation de la mise à jour..." : "Finalisation et optimisation du système..."} 
-        />
-      )}
-
       {token && <GlobalSocketListener />}
       
       <Outlet />
@@ -94,7 +97,6 @@ const AppRoot = () => {
   );
 };
 
-// Router (Inchangé mais fourni pour être complet)
 const router = createBrowserRouter([
   {
     element: <AppRoot />,

@@ -7,28 +7,26 @@ const POLLING_INTERVAL = 1 * 60 * 1000; // 1 minute
 export function useVersionCheck() {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
   const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
-  const [isPostUpdateLoading, setIsPostUpdateLoading] = useState(false); // ✅ Nouveau : Loader après reload
+  
+  // ✅ CORRECTION CRITIQUE : On vérifie le flag SYNCHRONEMENT à l'initialisation
+  const [isPostUpdateLoading, setIsPostUpdateLoading] = useState(() => {
+    return !!sessionStorage.getItem('pwaUpdateInProgress');
+  });
+  
   const [showUpdateCompleteModal, setShowUpdateCompleteModal] = useState(false);
 
-  // 1. Détection immédiate au démarrage
+  // Gestion de la fin du chargement post-mise à jour
   useEffect(() => {
-    const updateFlag = sessionStorage.getItem('pwaUpdateInProgress');
-    if (updateFlag) {
-      // ✅ ON ACTIVE LE LOADER TOUT DE SUITE
-      setIsPostUpdateLoading(true);
-      
-      // ✅ ON ATTEND 3 SECONDES (comme demandé) pour masquer le flash blanc et charger le background
+    if (isPostUpdateLoading) {
       const timer = setTimeout(() => {
         sessionStorage.removeItem('pwaUpdateInProgress');
         setIsPostUpdateLoading(false);
-        setShowUpdateCompleteModal(true); // Puis on montre le modal de succès
-      }, 3000);
-
+        setShowUpdateCompleteModal(true);
+      }, 3000); // 3 secondes de sécurité pour charger les assets en cachette
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isPostUpdateLoading]);
 
-  // 2. Logique de vérification périodique
   const performCheck = useCallback(async () => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
     if (!currentVersion || versionInfo.available) return;
@@ -53,10 +51,8 @@ export function useVersionCheck() {
     return () => clearInterval(interval);
   }, [performCheck]);
 
-  // 3. Logique de déclenchement de la mise à jour
   const confirmUpdate = async () => {
     setIsUpdateInProgress(true);
-    
     sessionStorage.setItem('newAppVersion', versionInfo.displayVersion || 'Nouvelle');
     sessionStorage.setItem('pwaUpdateInProgress', 'true');
 
@@ -79,7 +75,7 @@ export function useVersionCheck() {
   return {
     versionInfo,
     isUpdateInProgress,
-    isPostUpdateLoading, // ✅ On l'exporte pour App.jsx
+    isPostUpdateLoading,
     showUpdateCompleteModal,
     setShowUpdateCompleteModal,
     confirmUpdate,
