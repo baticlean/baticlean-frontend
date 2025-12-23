@@ -13,7 +13,7 @@ import FullScreenLoader from './components/FullScreenLoader.jsx';
 import SpecialWarning from './components/SpecialWarning.jsx';
 import GlobalSocketListener from './components/GlobalSocketListener.jsx';
 
-// Imports Pages & Routes
+// Imports Routes & Pages
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -47,6 +47,7 @@ const AppRoot = () => {
     versionInfo, 
     confirmUpdate, 
     isUpdateInProgress, 
+    isPostUpdateLoading, // ✅ On récupère le nouvel état
     showUpdateCompleteModal, 
     setShowUpdateCompleteModal 
   } = useVersion();
@@ -62,9 +63,11 @@ const AppRoot = () => {
 
   return (
     <>
-      {/* ✅ VRAI CHARGEMENT PENDANT LA MISE À JOUR */}
-      {isUpdateInProgress && (
-        <FullScreenLoader message="Installation de la nouvelle version de BATIClean... Ne quittez pas." />
+      {/* ✅ LOADER PENDANT ET APRÈS LA MISE À JOUR */}
+      {(isUpdateInProgress || isPostUpdateLoading) && (
+        <FullScreenLoader 
+          message={isUpdateInProgress ? "Installation de la mise à jour..." : "Finalisation et optimisation du système..."} 
+        />
       )}
 
       {token && <GlobalSocketListener />}
@@ -91,7 +94,7 @@ const AppRoot = () => {
   );
 };
 
-// ... le reste du code du router reste identique à ta version actuelle
+// Router (Inchangé mais fourni pour être complet)
 const router = createBrowserRouter([
   {
     element: <AppRoot />,

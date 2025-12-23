@@ -7,18 +7,28 @@ const POLLING_INTERVAL = 1 * 60 * 1000; // 1 minute
 export function useVersionCheck() {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
   const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
+  const [isPostUpdateLoading, setIsPostUpdateLoading] = useState(false); // ✅ Nouveau : Loader après reload
   const [showUpdateCompleteModal, setShowUpdateCompleteModal] = useState(false);
 
-  // 1. Vérification au chargement si on vient de finir une mise à jour
+  // 1. Détection immédiate au démarrage
   useEffect(() => {
     const updateFlag = sessionStorage.getItem('pwaUpdateInProgress');
     if (updateFlag) {
-      sessionStorage.removeItem('pwaUpdateInProgress');
-      setShowUpdateCompleteModal(true);
+      // ✅ ON ACTIVE LE LOADER TOUT DE SUITE
+      setIsPostUpdateLoading(true);
+      
+      // ✅ ON ATTEND 3 SECONDES (comme demandé) pour masquer le flash blanc et charger le background
+      const timer = setTimeout(() => {
+        sessionStorage.removeItem('pwaUpdateInProgress');
+        setIsPostUpdateLoading(false);
+        setShowUpdateCompleteModal(true); // Puis on montre le modal de succès
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }
   }, []);
 
-  // 2. Logique de vérification (comparaison meta vs meta.json)
+  // 2. Logique de vérification périodique
   const performCheck = useCallback(async () => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
     if (!currentVersion || versionInfo.available) return;
@@ -43,16 +53,14 @@ export function useVersionCheck() {
     return () => clearInterval(interval);
   }, [performCheck]);
 
-  // 3. Logique de confirmation (La clé de la stabilité)
+  // 3. Logique de déclenchement de la mise à jour
   const confirmUpdate = async () => {
     setIsUpdateInProgress(true);
     
-    // On stocke les infos pour le prochain chargement
     sessionStorage.setItem('newAppVersion', versionInfo.displayVersion || 'Nouvelle');
     sessionStorage.setItem('pwaUpdateInProgress', 'true');
 
     try {
-      // ✅ ON TUE LE SERVICE WORKER pour forcer le navigateur à reprendre le contrôle direct
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const registration of registrations) {
@@ -63,7 +71,6 @@ export function useVersionCheck() {
       console.error("Erreur unregister SW:", error);
     }
 
-    // On attend 1s pour laisser le temps au SW de se désactiver proprement
     setTimeout(() => {
       window.location.reload(true);
     }, 1000);
@@ -72,6 +79,7 @@ export function useVersionCheck() {
   return {
     versionInfo,
     isUpdateInProgress,
+    isPostUpdateLoading, // ✅ On l'exporte pour App.jsx
     showUpdateCompleteModal,
     setShowUpdateCompleteModal,
     confirmUpdate,
