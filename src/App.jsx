@@ -1,6 +1,6 @@
 // baticlean-frontend/src/App.jsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
@@ -13,7 +13,7 @@ import UpdatingScreen from './components/UpdatingScreen';
 import SpecialWarning from './components/SpecialWarning.jsx';
 import GlobalSocketListener from './components/GlobalSocketListener.jsx';
 
-// Imports Routes & Pages (Inchangés)
+// Imports Routes & Pages
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -46,8 +46,8 @@ const AppRoot = () => {
   const { 
     versionInfo, 
     confirmUpdate, 
-    declineUpdate, // ✅ Récupéré
-    isModalOpen, // ✅ Récupéré depuis le hook
+    declineUpdate,
+    isModalOpen, 
     isUpdateInProgress, 
     isPostUpdateLoading,
     showUpdateCompleteModal, 
@@ -56,11 +56,20 @@ const AppRoot = () => {
   
   const { token } = useSelector((state) => state.auth);
 
+  // ✅ NETTOYAGE DE L'URL (On retire le ?upd=... pour garder une URL propre)
+  useEffect(() => {
+    if (window.location.search.includes('upd=')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // ✅ BLOCAGE DU RENDU PENDANT LE RIDEAU (Pour éviter les flashs d'anciens composants)
+  if (isUpdateInProgress || isPostUpdateLoading) {
+    return <UpdatingScreen open={true} />;
+  }
+
   return (
     <>
-      {/* ✅ Rideau de protection */}
-      <UpdatingScreen open={isUpdateInProgress || isPostUpdateLoading} />
-
       {token && <GlobalSocketListener />}
       
       <Outlet />
@@ -69,7 +78,7 @@ const AppRoot = () => {
       <CookieConsent />
       
       <UpdateNotification
-        open={isModalOpen} // ✅ Piloté par le hook centralisé
+        open={isModalOpen}
         onClose={declineUpdate}
         onConfirm={confirmUpdate}
         versionInfo={versionInfo}
@@ -85,7 +94,6 @@ const AppRoot = () => {
   );
 };
 
-// Router (Inchangé)
 const router = createBrowserRouter([
   {
     element: <AppRoot />,

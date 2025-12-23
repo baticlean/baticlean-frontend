@@ -39,7 +39,7 @@ const UpdatingScreen = ({ open }) => {
         BATIClean se met à jour pour vous offrir une meilleure expérience.
       </Typography>
       
-      {/* ✅ TEXTE MODIFIÉ SELON TON EXIGENCE */}
+      {/* ✅ TEXTE MODIFIÉ : "un certain temps" */}
       <Typography variant="caption" sx={{ mb: 4, opacity: 0.7, fontStyle: 'italic' }}>
         Cela peut prendre un certain temps selon votre connexion...
       </Typography>
