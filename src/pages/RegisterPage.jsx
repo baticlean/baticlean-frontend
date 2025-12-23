@@ -7,17 +7,18 @@ import {
 } from '@mui/material';
 import { 
   Visibility, VisibilityOff, Email, Person, 
-  Lock, Phone, CheckCircle, RadioButtonUnchecked 
+  Lock, CheckCircle, RadioButtonUnchecked 
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import './PhoneNumber.css';
-import axios from 'axios';
-import { setCredentials } from '../redux/authSlice';
-import { motion, AnimatePresence } from 'framer-motion';
+
+// ✅ ON UTILISE TES ACTIONS EXISTANTES
+import { registerUser } from '../redux/authSlice'; 
+import { motion } from 'framer-motion';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -27,11 +28,14 @@ const RegisterPage = () => {
     phoneNumber: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
+  // ✅ On récupère le loading depuis ton slice auth
+  const { loading } = useSelector((state) => state.auth);
+  
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // État pour la validation dynamique du mot de passe
+  // État pour la validation dynamique du mot de passe (Règles BATIClean)
   const [passwordValidation, setPasswordValidation] = useState({
     hasLetter: false,
     hasThreeNumbers: false,
@@ -59,37 +63,43 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const isPasswordValid = Object.values(passwordValidation).every(v => v);
     
+    // Vérification finale avant envoi
+    const isPasswordValid = Object.values(passwordValidation).every(v => v);
     if (!isPasswordValid) {
-      toast.error("Le mot de passe ne respecte pas les critères de sécurité.");
+      toast.error("Veuillez respecter tous les critères de sécurité du mot de passe.");
       return;
     }
 
-    setLoading(true);
-    try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const res = await axios.post(`${API_URL}/api/register`, formData);
-      dispatch(setCredentials({ 
-        token: res.data.authToken, 
-        user: res.data.user || null 
-      }));
-      toast.success("Bienvenue chez BATIClean !");
+    if (!formData.phoneNumber) {
+      toast.error("Le numéro de téléphone est requis.");
+      return;
+    }
+
+    // ✅ ON DISPATCHE TON THUNK REGISTER
+    const resultAction = await dispatch(registerUser(formData));
+
+    if (registerUser.fulfilled.match(resultAction)) {
+      toast.success("Inscription réussie ! Bienvenue.");
       navigate('/welcome');
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Erreur lors de l'inscription");
-    } finally {
-      setLoading(false);
+    } else {
+      // L'erreur est déjà gérée dans ton slice, on l'affiche ici
+      toast.error(resultAction.payload || "Échec de l'inscription");
     }
   };
 
+  // Composant interne pour la checklist
   const ValidationItem = ({ label, isMet }) => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
       {isMet ? 
         <CheckCircle sx={{ fontSize: 16, color: '#4caf50' }} /> : 
         <RadioButtonUnchecked sx={{ fontSize: 16, color: '#bdbdbd' }} />
       }
-      <Typography variant="caption" sx={{ color: isMet ? '#2e7d32' : '#757575', fontWeight: isMet ? 600 : 400 }}>
+      <Typography variant="caption" sx={{ 
+        color: isMet ? '#2e7d32' : '#757575', 
+        fontWeight: isMet ? 600 : 400,
+        transition: 'all 0.3s ease'
+      }}>
         {label}
       </Typography>
     </Box>
@@ -108,10 +118,10 @@ const RegisterPage = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
             <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: '#3f51b5' }}>
-              Créer un compte
+              BATIClean
             </Typography>
             <Typography variant="body2" align="center" sx={{ mb: 3, color: '#666' }}>
-              Rejoignez BATIClean pour vos services de nettoyage
+              Créez votre compte en quelques secondes
             </Typography>
 
             <form onSubmit={handleSubmit}>
@@ -127,8 +137,11 @@ const RegisterPage = () => {
               />
               
               <Box sx={{ mt: 2, mb: 1 }}>
+                <Typography variant="caption" color="textSecondary" sx={{ ml: 1, mb: 0.5, display: 'block' }}>
+                  Numéro de téléphone (Format international)
+                </Typography>
                 <PhoneInput
-                  placeholder="Numéro de téléphone"
+                  placeholder="Ex: +33 6 12 34 56 78"
                   value={formData.phoneNumber}
                   onChange={handlePhoneChange}
                   defaultCountry="FR"
@@ -155,7 +168,7 @@ const RegisterPage = () => {
               {/* Checklist de sécurité dynamique */}
               <Box sx={{ mt: 1, mb: 2, p: 1.5, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #e0e0e0' }}>
                 <Typography variant="caption" sx={{ display: 'block', mb: 1, fontWeight: 700, color: '#3f51b5' }}>
-                  SÉCURITÉ DU MOT DE PASSE :
+                  SÉCURITÉ REQUISE :
                 </Typography>
                 <ValidationItem label="Au moins une lettre" isMet={passwordValidation.hasLetter} />
                 <ValidationItem label="Au moins 3 chiffres" isMet={passwordValidation.hasThreeNumbers} />
