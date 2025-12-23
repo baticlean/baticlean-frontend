@@ -8,25 +8,28 @@ export function useVersionCheck() {
   const [versionInfo, setVersionInfo] = useState({ available: false, displayVersion: null });
   const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
   
-  // ✅ CORRECTION CRITIQUE : On vérifie le flag SYNCHRONEMENT à l'initialisation
+  // ✅ Initialisation synchrone pour capter le flag dès le millième de seconde
   const [isPostUpdateLoading, setIsPostUpdateLoading] = useState(() => {
     return !!sessionStorage.getItem('pwaUpdateInProgress');
   });
   
   const [showUpdateCompleteModal, setShowUpdateCompleteModal] = useState(false);
 
-  // Gestion de la fin du chargement post-mise à jour
+  // Gestion du rideau de travaux après le rechargement
   useEffect(() => {
     if (isPostUpdateLoading) {
+      // ✅ ON PASSE À 30 SECONDES (30000ms) POUR ÊTRE SÛR QUE TOUT LE CACHE EST PRÊT
       const timer = setTimeout(() => {
         sessionStorage.removeItem('pwaUpdateInProgress');
         setIsPostUpdateLoading(false);
         setShowUpdateCompleteModal(true);
-      }, 3000); // 3 secondes de sécurité pour charger les assets en cachette
+      }, 30000); 
+
       return () => clearTimeout(timer);
     }
   }, [isPostUpdateLoading]);
 
+  // Vérification périodique (Inchangé)
   const performCheck = useCallback(async () => {
     const currentVersion = document.querySelector('meta[name="app-version"]')?.content;
     if (!currentVersion || versionInfo.available) return;
@@ -51,6 +54,7 @@ export function useVersionCheck() {
     return () => clearInterval(interval);
   }, [performCheck]);
 
+  // Lancement de la mise à jour
   const confirmUpdate = async () => {
     setIsUpdateInProgress(true);
     sessionStorage.setItem('newAppVersion', versionInfo.displayVersion || 'Nouvelle');

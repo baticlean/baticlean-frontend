@@ -9,11 +9,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useVersion } from './context/VersionContext.jsx';
 import UpdateNotification from './components/UpdateNotification';
 import UpdateCompleteModal from './components/UpdateCompleteModal';
-import FullScreenLoader from './components/FullScreenLoader.jsx';
+// ✅ On remplace FullScreenLoader par le nouvel écran spécifique
+import UpdatingScreen from './components/UpdatingScreen'; 
 import SpecialWarning from './components/SpecialWarning.jsx';
 import GlobalSocketListener from './components/GlobalSocketListener.jsx';
 
-// Imports Routes & Pages
+// Imports Routes & Pages (Inchangés)
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -47,7 +48,8 @@ const AppRoot = () => {
     versionInfo, 
     confirmUpdate, 
     isUpdateInProgress, 
-    isPostUpdateLoading,
+    // ✅ C'est cet état qui va piloter l'écran de travaux
+    isPostUpdateLoading, 
     showUpdateCompleteModal, 
     setShowUpdateCompleteModal 
   } = useVersion();
@@ -61,20 +63,17 @@ const AppRoot = () => {
     }
   }, [versionInfo]);
 
-  // ✅ BLOCAGE CRITIQUE : Si on est en train de mettre à jour ou de charger après mise à jour,
-  // on affiche UNIQUEMENT le loader. Pas de flash possible.
-  if (isUpdateInProgress || isPostUpdateLoading) {
-    return (
-      <FullScreenLoader 
-        message={isUpdateInProgress ? "Installation de la mise à jour..." : "Finalisation et optimisation du système..."} 
-      />
-    );
-  }
+  // ❌ ANCIEN CODE SUPPRIMÉ : On ne bloque plus le rendu !
+  // if (isUpdateInProgress || isPostUpdateLoading) { ... }
 
   return (
     <>
+      {/* ✅ LE NOUVEAU RIDEAU : S'affiche par-dessus tout le reste si nécessaire */}
+      <UpdatingScreen open={isUpdateInProgress || isPostUpdateLoading} />
+
       {token && <GlobalSocketListener />}
       
+      {/* Le reste de l'application se charge ici, SOUS le UpdatingScreen */}
       <Outlet />
 
       <ToastContainer position="bottom-right" autoClose={4000} theme="colored" />
@@ -97,6 +96,7 @@ const AppRoot = () => {
   );
 };
 
+// Router (Inchangé)
 const router = createBrowserRouter([
   {
     element: <AppRoot />,
