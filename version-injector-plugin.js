@@ -1,4 +1,4 @@
-// vite-plugin-version-injector.js
+// vite-plugin-version-injector.js 
 
 import { execSync } from 'child_process';
 import fs from 'fs';
