@@ -1,4 +1,4 @@
-// src/App.jsx
+// baticlean/baticlean-frontend/baticlean-frontend-6de3eed10c580ff6c1f7931b4a6e09bd7c93a2e9/src/App.jsx
 
 import React, { useState, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
@@ -6,12 +6,16 @@ import { useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// ✅ Import du hook PWA et du Loader
+import { useRegisterSW } from 'virtual:pwa-register/react';
+import FullScreenLoader from './components/FullScreenLoader.jsx';
+
 import { useVersion } from './context/VersionContext.jsx';
 import UpdateNotification from './components/UpdateNotification';
 import SpecialWarning from './components/SpecialWarning.jsx';
-import GlobalSocketListener from './components/GlobalSocketListener.jsx'; // ✅ On importe l'auditeur
+import GlobalSocketListener from './components/GlobalSocketListener.jsx';
 
-// ... (tous tes autres imports de pages et composants restent ici)
+// ... (tous tes autres imports de pages et composants)
 import AuthStatusHandler from './components/AuthStatusHandler.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicRoute from './components/PublicRoute.jsx';
@@ -40,31 +44,52 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import MaintenanceAdminPage from './pages/MaintenanceAdminPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
-
 const AppRoot = () => {
   const { versionInfo } = useVersion();
   const { token } = useSelector((state) => state.auth);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false); // ✅ État pour le loader "vrai"
+
+  // ✅ Gestion PWA Native
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
 
   useEffect(() => {
-    if (versionInfo.available) {
+    // On déclenche le modal si version.json OU le Service Worker détectent une maj
+    if (versionInfo.available || needRefresh) {
       setModalOpen(true);
     }
-  }, [versionInfo]);
+  }, [versionInfo, needRefresh]);
 
   const handleUpdate = () => {
-    window.location.reload(true);
+    setIsUpdating(true); // ✅ On lance le chargement immédiatement
+    setModalOpen(false);
+
+    // Un petit délai pour s'assurer que l'utilisateur voit le loader et que c'est "propre"
+    setTimeout(() => {
+      if (needRefresh) {
+        // ✅ La méthode propre de vite-plugin-pwa qui skipWaiting et reload
+        updateServiceWorker(true); 
+      } else {
+        window.location.reload(true);
+      }
+    }, 1500);
   };
 
   return (
     <>
-      {/* ✅ ON RÉINTÈGRE L'OREILLE ICI ! Elle est active dès qu'un token existe. */}
+      {/* ✅ Le Loader s'affiche pendant la mise à jour */}
+      {isUpdating && <FullScreenLoader message="Mise à jour de BATIClean en cours..." />}
+
       {token && <GlobalSocketListener />}
       
       <Outlet />
 
-      <ToastContainer position="bottom-right" autoClose={4000} hideProgressBar={false} newestOnTop={true} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+      <ToastContainer position="bottom-right" autoClose={4000} theme="colored" />
       <CookieConsent />
+      
       <UpdateNotification
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -76,6 +101,7 @@ const AppRoot = () => {
   );
 };
 
+// ... (ton router createBrowserRouter reste identique)
 const router = createBrowserRouter([
   {
     element: <AppRoot />,
